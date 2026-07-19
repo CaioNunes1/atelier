@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #fffaf8;
+    color: #44403c;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display text-stone-900;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .card-surface {
+    @apply rounded-[2rem] border border-roseartisan-200 bg-white/85 shadow-soft backdrop-blur;
+  }
+
+  .artisan-pill {
+    @apply inline-flex items-center rounded-full border border-roseartisan-200 bg-roseartisan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-roseartisan-700;
+  }
+}

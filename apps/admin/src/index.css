@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-admin-bg font-body text-admin-ink;
+    min-height: 100dvh;
+  }
+
+  h1, h2, h3 { @apply font-display; }
+
+  ::-webkit-scrollbar        { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track  { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb  { @apply bg-leather-300/50 rounded-full; }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand ring-offset-1 ring-offset-white;
+  }
+}
+
+@layer components {
+  /* Botões */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-admin-ink text-white font-body font-medium text-sm
+           px-5 py-2.5 rounded-lg
+           transition-all duration-150
+           hover:bg-leather-700 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-white text-admin-ink font-body font-medium text-sm
+           px-5 py-2.5 rounded-lg border border-admin-border
+           transition-all duration-150
+           hover:bg-admin-surface hover:border-leather-300 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2
+           bg-red-600 text-white font-body font-medium text-sm
+           px-5 py-2.5 rounded-lg
+           transition-all duration-150
+           hover:bg-red-700 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5
+           bg-transparent text-admin-muted font-body text-sm
+           px-3 py-2 rounded-lg
+           transition-colors duration-150
+           hover:bg-admin-surface hover:text-admin-ink
+           disabled:opacity-50;
+  }
+
+  /* Inputs */
+  .input-field {
+    @apply w-full bg-white border border-admin-border text-admin-ink
+           font-body text-sm placeholder:text-admin-muted/60
+           px-3.5 py-2.5 rounded-lg
+           transition-all duration-150
+           focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand
+           disabled:bg-admin-surface disabled:cursor-not-allowed;
+  }
+
+  .input-label {
+    @apply block font-body text-xs font-medium text-admin-muted
+           uppercase tracking-wider mb-1.5;
+  }
+
+  .input-error {
+    @apply text-xs text-red-600 mt-1 font-body;
+  }
+
+  /* Card do admin */
+  .admin-card {
+    @apply bg-white rounded-xl border border-admin-border shadow-sm;
+  }
+
+  /* Linha de tabela */
+  .table-row-hover {
+    @apply hover:bg-admin-surface/60 transition-colors duration-100;
+  }
+
+  /* Badge de status */
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-body;
+  }
+
+  /* Toggle switch */
+  .toggle {
+    @apply relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center
+           rounded-full border-2 border-transparent
+           transition-colors duration-200 ease-in-out
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-brand;
+  }
+
+  .toggle-thumb {
+    @apply pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow
+           transition-transform duration-200 ease-in-out;
+  }
+}
