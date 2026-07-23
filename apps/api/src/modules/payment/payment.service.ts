@@ -40,32 +40,40 @@ export class PaymentService {
 
   const preference = new Preference(this.mp);
 
-  const preferenceBody = {
-    items: order.items.map((item) => ({
-      id:          item.productId,
-      title:       item.productName,
-      quantity:    item.quantity,
-      unit_price:  item.unitPriceInCents / 100,
-      currency_id: 'BRL',
-    })),
-    payer: {
-      name:  order.user.name ?? order.user.email,
-      email: order.user.email,
-    },
-    back_urls: {
-      success: `${webUrl}/checkout/sucesso`,
-      failure: `${webUrl}/checkout/falha`,
-      pending: `${webUrl}/checkout/pendente`,
-    },
-    //auto_return: 'approved' as const,
-    external_reference: order.id,
-    // notification_url removida para teste local
-    payment_methods: {
-      excluded_payment_types: [],   // não exclui nenhum tipo
-      installments: 1,              // só à vista por enquanto
+  const shippingInCents = order.shippingInCents ?? 0
+
+const orderItems = order.items.map((item) => ({
+  id:          item.productId,
+  title:       item.productName,
+  quantity:    item.quantity,
+  unit_price:  item.unitPriceInCents / 100,
+  currency_id: 'BRL',
+}))
+
+if (shippingInCents > 0) {
+  orderItems.push({
+    id:          'shipping',
+    title:       'Frete',
+    quantity:    1,
+    unit_price:  shippingInCents / 100,
+    currency_id: 'BRL',
+  })
+}
+
+const preferenceBody = {
+  items: orderItems,
+  payer: {
+    name:  order.user.name ?? order.user.email,
+    email: order.user.email,
   },
-    // expires removido para teste local
-  }
+  back_urls: {
+    success: `${webUrl}/checkout/sucesso`,
+    failure: `${webUrl}/checkout/falha`,
+    pending: `${webUrl}/checkout/pendente`,
+  },
+  external_reference: order.id,
+  notification_url: `${webUrl}/api/payments/webhook`,
+}
 
   console.log('Enviando para MP:', JSON.stringify(preferenceBody, null, 2))
 
@@ -79,5 +87,53 @@ export class PaymentService {
   });
 
   return { url: result.init_point! };
+}
+
+async handleWebhook(body: unknown) {
+  // O MP envia diferentes tipos de notificação
+  const notification = body as { type?: string; action?: string; data?: { id?: string } }
+  
+  console.log('Webhook recebido:', JSON.stringify(notification))
+
+  // Só processa notificações de pagamento
+  if (notification.type !== 'payment' && notification.action !== 'payment.updated') {
+    return
+  }
+
+  const paymentId = notification.data?.id
+  if (!paymentId) return
+
+  try {
+    // Consulta o status do pagamento na API do MP
+    const { Payment } = await import('mercadopago')
+    const paymentClient = new Payment(this.mp)
+    const payment = await paymentClient.get({ id: paymentId })
+
+    console.log('Status do pagamento:', payment.status, 'Order:', payment.external_reference)
+
+    const orderId = payment.external_reference
+    if (!orderId) return
+
+    if (payment.status === 'approved') {
+      // Muda status do pedido para PAID
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'PAID' },
+      })
+      console.log('Pedido aprovado:', orderId)
+    }
+
+    if (payment.status === 'rejected' || payment.status === 'cancelled') {
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'CANCELLED' },
+      })
+      console.log('Pedido cancelado:', orderId)
+    }
+
+  } catch (error) {
+    console.error('Erro ao processar webhook:', error)
+    // Não lança exceção — o MP vai retentar se der 500
+  }
 }
 }

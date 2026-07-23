@@ -13,4 +13,10 @@ export class PaymentController {
     const result = await this.paymentService.createCheckout(dto);
     return { data: result };
   }
+    // Webhook — sem guard, o MP chama diretamente
+  @Post('webhook')
+  async webhook(@Body() body: unknown) {
+    await this.paymentService.handleWebhook(body);
+    return { received: true }; // MP espera 200 rápido
+  }
 }

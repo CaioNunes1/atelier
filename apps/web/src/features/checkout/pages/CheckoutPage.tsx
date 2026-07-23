@@ -172,7 +172,7 @@ export function CheckoutPage() {
         coupon_code: appliedCoupon?.code,
       })
       const payment = await checkoutPayment.mutateAsync({ order_id: order.id })
-      window.location.href = payment.url
+      window.open(payment.url, '_blank', 'noopener,noreferrer');
     } catch (error: unknown) {
       // Mostra o erro real do backend
       if (error && typeof error === 'object' && 'response' in error) {
