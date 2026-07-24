@@ -18,6 +18,6 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
   app.useGlobalFilters(new GlobalExceptionFilter());
-  await app.listen(configService.get<number>('PORT', 3333));
+  await app.listen(configService.get<number>('PORT', 3333),'0.0.0.0',);
 }
 bootstrap();

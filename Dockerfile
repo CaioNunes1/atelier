@@ -33,4 +33,4 @@ COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 3333
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/main.js"]
