@@ -142,7 +142,7 @@ importers:
         specifier: ^3.0.0
         version: 3.1.0(@nestjs/common@11.1.27)(@nestjs/core@11.1.27)(reflect-metadata@0.2.2)
       '@prisma/client':
-        specifier: ^5.0.0
+        specifier: ^5.22.0
         version: 5.22.0(prisma@5.22.0)
       argon2:
         specifier: ^0.30.0
@@ -175,7 +175,7 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       prisma:
-        specifier: ^5.0.0
+        specifier: ^5.22.0
         version: 5.22.0
       reflect-metadata:
         specifier: ^0.2.2
