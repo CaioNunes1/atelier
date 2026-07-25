@@ -1,44 +1,67 @@
 FROM node:20-alpine AS base
-RUN npm install -g pnpm@9
 
-# ─── Dependências ────────────────────────────────────────────────────────────
+RUN npm install -g pnpm
+
+
+# =========================
+# DEPENDÊNCIAS
+# =========================
+
 FROM base AS deps
+
 WORKDIR /app
 
-# Copia apenas os manifests para cache eficiente
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+
 COPY apps/api/package.json ./apps/api/
-# Copia packages que a API pode importar
-COPY packages/ ./packages/
+COPY packages/types/package.json ./packages/types/
+COPY packages/utils/package.json ./packages/utils/
 
 RUN pnpm install --frozen-lockfile
 
-# ─── Build ───────────────────────────────────────────────────────────────────
+
+# =========================
+# BUILD
+# =========================
+
 FROM base AS builder
+
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+
 COPY . .
 
-# Gera o Prisma Client durante o build (obrigatório)
-RUN pnpm --filter api exec prisma generate
-
-# Compila o NestJS
 RUN pnpm --filter api build
 
-# ─── Runner ──────────────────────────────────────────────────────────────────
+# Gera o Prisma Client
+RUN pnpm --filter api exec prisma generate
+
+
+# =========================
+# PRODUÇÃO
+# =========================
+
 FROM base AS runner
+
 WORKDIR /app
+
 ENV NODE_ENV=production
 
-# Copia apenas o necessário para rodar
+# Copia aplicação compilada
 COPY --from=builder /app/apps/api/dist ./dist
+
+# Copia package.json da API
 COPY --from=builder /app/apps/api/package.json ./package.json
+
+# Copia Prisma
 COPY --from=builder /app/apps/api/prisma ./prisma
+
+# Copia dependências
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 
 EXPOSE 3333
 
-# USA pnpm exec — respeita a versão do prisma instalada no projeto
-CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "cd /app/apps/api && pnpm exec prisma migrate deploy && cd /app && node dist/main.js"]
