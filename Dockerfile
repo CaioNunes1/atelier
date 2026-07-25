@@ -11,6 +11,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN ./node_modules/.bin/prisma generate --schema=./apps/api/prisma/schema.prisma
 RUN pnpm --filter api build
 
 FROM node:20-alpine AS runner
