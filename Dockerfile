@@ -56,4 +56,4 @@ COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 
 EXPOSE 3333
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
