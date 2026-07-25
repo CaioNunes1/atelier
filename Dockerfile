@@ -1,11 +1,13 @@
 FROM node:20-alpine AS base
 
+RUN apk add --no-cache openssl
+
 RUN npm install -g pnpm@8.10.0
 
 
-# =========================================================
+# =========================
 # DEPENDÊNCIAS
-# =========================================================
+# =========================
 FROM base AS deps
 
 WORKDIR /app
@@ -16,9 +18,9 @@ COPY apps/api/package.json ./apps/api/package.json
 RUN pnpm install --frozen-lockfile
 
 
-# =========================================================
+# =========================
 # BUILD
-# =========================================================
+# =========================
 FROM base AS builder
 
 WORKDIR /app
@@ -33,10 +35,12 @@ RUN pnpm --filter api exec prisma generate
 RUN pnpm --filter api build
 
 
-# =========================================================
+# =========================
 # PRODUÇÃO
-# =========================================================
+# =========================
 FROM node:20-alpine AS runner
+
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
@@ -52,4 +56,4 @@ COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 
 EXPOSE 3333
 
-CMD ["sh", "-c", "cd /app/apps/api && pnpm exec prisma migrate deploy && node /app/dist/main.js"]
+CMD ["node", "dist/main.js"]
