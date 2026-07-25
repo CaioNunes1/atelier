@@ -1,67 +1,45 @@
 FROM node:20-alpine AS base
+# Usa a mesma versão do packageManager da raiz
+RUN npm install -g pnpm@8.10.0
 
-RUN npm install -g pnpm
-
-
-# =========================
-# DEPENDÊNCIAS
-# =========================
-
+# ─── Dependências ────────────────────────────────────────────────────────────
 FROM base AS deps
-
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
-
 COPY apps/api/package.json ./apps/api/
-COPY packages/types/package.json ./packages/types/
-COPY packages/utils/package.json ./packages/utils/
 
 RUN pnpm install --frozen-lockfile
 
-
-# =========================
-# BUILD
-# =========================
-
+# ─── Build ───────────────────────────────────────────────────────────────────
 FROM base AS builder
-
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules 2>/dev/null || true
 COPY . .
 
+# Gera Prisma Client
+RUN ./node_modules/.bin/prisma generate --schema=./apps/api/prisma/schema.prisma
+
+# Compila NestJS
 RUN pnpm --filter api build
 
-# Gera o Prisma Client
-RUN pnpm --filter api exec prisma generate
-
-
-# =========================
-# PRODUÇÃO
-# =========================
-
-FROM base AS runner
-
+# ─── Runner ──────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
 WORKDIR /app
-
 ENV NODE_ENV=production
 
-# Copia aplicação compilada
+# Copia dist compilado
 COPY --from=builder /app/apps/api/dist ./dist
 
-# Copia package.json da API
-COPY --from=builder /app/apps/api/package.json ./package.json
-
-# Copia Prisma
+# Copia Prisma (schema + migrations)
 COPY --from=builder /app/apps/api/prisma ./prisma
 
-# Copia dependências
+# Copia node_modules da raiz (contém o prisma binário)
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 
 EXPOSE 3333
 
-CMD ["sh", "-c", "cd /app/apps/api && pnpm exec prisma migrate deploy && cd /app && node dist/main.js"]
+# Usa o binário direto — sem workspace
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
