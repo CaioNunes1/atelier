@@ -18,17 +18,16 @@ async function bootstrap() {
   console.log('Origens CORS permitidas:', allowedOrigins)
 
   app.enableCors({
-    origin: (origin, callback) => {
-      // Sem origin = Postman / server-to-server → permite
-      if (!origin) return callback(null, true)
-      if (allowedOrigins.includes(origin)) return callback(null, true)
-      console.warn('CORS bloqueado:', origin)
-      callback(new Error('Not allowed by CORS'))
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin) return callback(null, true)
+    if (allowedOrigins.includes(origin)) return callback(null, true)
+    console.warn('CORS bloqueado:', origin)
+    callback(new Error('Not allowed by CORS'))
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+})
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   app.useGlobalFilters(new GlobalExceptionFilter())
