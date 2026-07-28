@@ -40,7 +40,7 @@ export function HomePage() {
           <div className="relative p-6 sm:p-10">
             <div className="absolute inset-8 rounded-[2.5rem] bg-roseartisan-100/70 blur-3xl" />
             <img
-              src={heroImage}
+              src='https://images.openai.com/static-rsc-4/KlXsJNWTxpr3RgcbDnh2wQ-bWeQh6kbCCt5HnYYsLrp6bBUZoOLw477JHtM9gitZyZinahNBHazXdzcg9nkQcFi5Iz63B2gaIs3JY8DwT-vOQMwmfuexbODiJTw5gPJaQGbua2tCbgIzCEKa-VpK41T8x1vqbOvRwF-Yg1y5lMdO5SHGbac2T4lUKIZHnIBy?purpose=fullsize'
               alt="Peças artesanais em tons rosados"
               className="relative mx-auto w-full max-w-md rounded-[2.5rem] object-cover shadow-soft"
             />
