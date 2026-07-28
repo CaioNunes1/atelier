@@ -15,17 +15,28 @@ export class StorageService {
   private readonly bucket: string;
   private readonly endpoint: string;
 
+  private readonly publicUrl: string;
+
   constructor(private readonly configService: ConfigService) {
     this.bucket = this.configService.get<string>('STORAGE_BUCKET') ?? '';
-    this.endpoint = (this.configService.get<string>('STORAGE_ENDPOINT') ?? '').replace(/\/$/, '');
+
+    this.endpoint = (
+      this.configService.get<string>('STORAGE_ENDPOINT') ?? ''
+    ).replace(/\/$/, '');
+
+    this.publicUrl = (
+      this.configService.get<string>('STORAGE_PUBLIC_URL') ?? ''
+    ).replace(/\/$/, '');
 
     this.client = new S3Client({
       endpoint: this.endpoint,
-      region: 'us-east-1',
+      region: this.configService.get<string>('STORAGE_REGION') ?? 'us-east-1',
       forcePathStyle: true,
       credentials: {
-        accessKeyId: this.configService.get<string>('STORAGE_ACCESS_KEY') ?? '',
-        secretAccessKey: this.configService.get<string>('STORAGE_SECRET_KEY') ?? '',
+        accessKeyId:
+          this.configService.get<string>('STORAGE_ACCESS_KEY') ?? '',
+        secretAccessKey:
+          this.configService.get<string>('STORAGE_SECRET_KEY') ?? '',
       },
     });
   }
@@ -45,7 +56,7 @@ export class StorageService {
 
     return {
       key,
-      url: `${this.endpoint}/${this.bucket}/${key}`,
+      url: `${this.publicUrl}/${this.bucket}/${key}`,
     };
   }
 
