@@ -25,6 +25,17 @@ export class OrderController {
     return { data: orders };
   }
 
+  @Get('public/:id')
+  async findPublicStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const result = await this.orderService.getOrderPaymentStatus(id);
+
+    return {
+      data: result,
+    };
+  }
+
   @Get(':id')
   async findOne(@CurrentUser() user: { id: string }, @Param('id', ParseUUIDPipe) id: string) {
     const order = await this.orderService.getUserOrder(user.id, id);

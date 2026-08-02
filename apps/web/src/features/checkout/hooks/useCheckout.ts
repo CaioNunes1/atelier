@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {api} from '@/lib/axios';
-import type { CouponValidationResult, Order, ShippingQuote } from '../types';
+import type { CouponValidationResult, Order, OrderStatus, ShippingQuote } from '../types';
 
 export function useValidateCoupon() {
   return useMutation({
@@ -58,4 +58,43 @@ export function useOrder(id: string, enabled = true) {
       return response.data.data;
     },
   });
+}
+
+export function usePublicOrderStatus(
+  id: string,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ['public-order-status', id],
+
+    enabled: enabled && Boolean(id),
+
+    queryFn: async () => {
+      const response = await api.get<{
+        data: {
+          status: OrderStatus
+        }
+      }>(`/api/orders/public/${id}`)
+
+      return response.data.data
+    },
+
+    refetchInterval: (query) => {
+      const status = query.state.data?.status
+
+      if (
+        status === 'PAID' ||
+        status === 'PROCESSING' ||
+        status === 'SHIPPED' ||
+        status === 'DELIVERED' ||
+        status === 'CANCELLED'
+      ) {
+        return false
+      }
+
+      return 3000
+    },
+
+    refetchIntervalInBackground: true,
+  })
 }

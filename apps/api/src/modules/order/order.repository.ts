@@ -64,6 +64,16 @@ export class OrderRepository {
     });
   }
 
+    async findById(id: string) {
+    return this.prisma.order.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+  }
+
   mapOrder(order: OrderWithRelations) {
     return order;
   }

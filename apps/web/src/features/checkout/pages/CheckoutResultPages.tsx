@@ -1,67 +1,81 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/axios'
+import { usePublicOrderStatus } from '../hooks/useCheckout'
 
 type OrderStatus = 'PENDING_PAYMENT' | 'PAID' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
 
 export function CheckoutSuccessPage() {
   const [params] = useSearchParams()
+
   const orderId = params.get('external_reference')
-  const [status, setStatus] = useState<OrderStatus | null>(null)
-  const [attempts, setAttempts] = useState(0)
 
-  // Polling do status — o webhook pode demorar alguns segundos para chegar
-  useEffect(() => {
-    if (!orderId) return
+  const {
+    data,
+    isLoading,
+  } = usePublicOrderStatus(orderId ?? '')
 
-    const check = async () => {
-      try {
-        const res = await api.get<{ data: { status: OrderStatus } }>(`/api/orders/${orderId}`)
-        const s = res.data.data.status
-        setStatus(s)
+  const status = data?.status ?? null
 
-        // Continua verificando se ainda está pendente (máx 10 tentativas = ~30s)
-        if (s === 'PENDING_PAYMENT' && attempts < 10) {
-          setTimeout(() => setAttempts(a => a + 1), 3000)
-        }
-      } catch {
-        // Ignora erros de rede
-      }
-    }
+  const isPaid =
+    status === 'PAID' ||
+    status === 'PROCESSING' ||
+    status === 'SHIPPED' ||
+    status === 'DELIVERED'
 
-    check()
-  }, [orderId, attempts])
-
-  const isPaid    = status === 'PAID' || status === 'PROCESSING' || status === 'SHIPPED' || status === 'DELIVERED'
-  const isPending = status === 'PENDING_PAYMENT' || status === null
+  const isPending =
+    status === 'PENDING_PAYMENT' ||
+    status === null
 
   return (
     <section className="mx-auto max-w-lg py-20 text-center space-y-5">
-      {isPending ? (
+
+      {isLoading || isPending ? (
         <>
-          <div className="text-6xl animate-pulse">⏳</div>
-          <h1 className="font-display text-4xl text-stone-900">Confirmando pagamento…</h1>
+          <div className="text-6xl animate-pulse">
+            ⏳
+          </div>
+
+          <h1 className="font-display text-4xl text-stone-900">
+            Confirmando pagamento…
+          </h1>
+
           <p className="text-stone-600 leading-relaxed">
             Aguarde enquanto confirmamos seu pagamento com o Mercado Pago.
-            <br />Isso leva alguns segundos.
+            <br />
+            Isso leva alguns segundos.
           </p>
         </>
       ) : isPaid ? (
         <>
-          <div className="text-6xl">🎉</div>
-          <h1 className="font-display text-4xl text-stone-900">Pedido confirmado!</h1>
+          <div className="text-6xl">
+            🎉
+          </div>
+
+          <h1 className="font-display text-4xl text-stone-900">
+            Pedido confirmado!
+          </h1>
+
           <p className="text-stone-600 leading-relaxed">
             Seu pagamento foi recebido com sucesso.
-            <br />Em breve você receberá um email de confirmação.
+            <br />
+            Em breve você receberá um email de confirmação.
           </p>
         </>
       ) : (
         <>
-          <div className="text-6xl">😕</div>
-          <h1 className="font-display text-4xl text-stone-900">Pagamento não confirmado</h1>
+          <div className="text-6xl">
+            😕
+          </div>
+
+          <h1 className="font-display text-4xl text-stone-900">
+            Pagamento não confirmado
+          </h1>
+
           <p className="text-stone-600 leading-relaxed">
             Não conseguimos confirmar seu pagamento.
-            <br />Se foi cobrado, entre em contato conosco.
+            <br />
+            Se foi cobrado, entre em contato conosco.
           </p>
         </>
       )}
@@ -79,6 +93,7 @@ export function CheckoutSuccessPage() {
         >
           Voltar para a loja
         </Link>
+
         {orderId && (
           <Link
             to={`/pedidos/${orderId}`}

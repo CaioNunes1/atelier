@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { EventEmitter2 } from 'eventemitter2';
@@ -17,6 +19,7 @@ type OrderWithRelations = Prisma.OrderGetPayload<{ include: typeof ORDER_INCLUDE
 
 @Injectable()
 export class OrderService {
+  prisma: any;
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly couponService: CouponService,
@@ -127,7 +130,7 @@ export class OrderService {
 
   async listUserOrders(userId: string): Promise<OrderEntity[]> {
     const orders = await this.orderRepository.listUserOrders(userId);
-    return orders.map((order) => this.toEntity(order as OrderWithRelations));
+    return orders.map((order) => this.toEntity(order));
   }
 
   async getUserOrder(userId: string, id: string): Promise<OrderEntity> {
@@ -135,7 +138,7 @@ export class OrderService {
     if (!order) {
       throw new NotFoundException('Pedido não encontrado');
     }
-    return this.toEntity(order as OrderWithRelations);
+    return this.toEntity(order);
   }
 
   async listAdminOrders(): Promise<OrderEntity[]> {
@@ -148,8 +151,21 @@ export class OrderService {
     if (!order) {
       throw new NotFoundException('Pedido não encontrado');
     }
-    return this.toEntity(order as OrderWithRelations);
+    return this.toEntity(order);
   }
+
+
+  async getOrderPaymentStatus(id: string): Promise<{ status: OrderStatus }> {
+  const order = await this.orderRepository.findById(id);
+
+  if (!order) {
+    throw new NotFoundException('Pedido não encontrado');
+  }
+
+  return {
+    status: order.status,
+  };
+}
 
   async updateStatus(id: string, dto: UpdateOrderStatusDto): Promise<OrderEntity> {
     return this.orderRepository.transactional(async (tx) => {
@@ -184,7 +200,7 @@ export class OrderService {
       }
 
       this.emitStatusChanged(order.user.email, order.user.name, order.id, dto.status);
-      return this.toEntity(updated as OrderWithRelations);
+      return this.toEntity(updated);
     });
   }
 
