@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {api} from '@/lib/axios';
 import type { CouponValidationResult, Order, OrderStatus, ShippingQuote } from '../types';
+import { publicApi } from '@/lib/publicAxios';
 
 export function useValidateCoupon() {
   return useMutation({
@@ -60,28 +61,18 @@ export function useOrder(id: string, enabled = true) {
   });
 }
 
-export function usePublicOrderStatus(
-  id: string,
-  enabled = true,
-) {
+export function usePublicOrderStatus(id: string, enabled = true) {
   return useQuery({
     queryKey: ['public-order-status', id],
-
     enabled: enabled && Boolean(id),
-
     queryFn: async () => {
-      const response = await api.get<{
-        data: {
-          status: OrderStatus
-        }
-      }>(`/api/orders/public/${id}`)
-
-      return response.data.data
+      const response = await publicApi.get<{ data: { status: OrderStatus } }>(
+        `/api/orders/public/${id}`,
+      );
+      return response.data.data;
     },
-
     refetchInterval: (query) => {
-      const status = query.state.data?.status
-
+      const status = query.state.data?.status;
       if (
         status === 'PAID' ||
         status === 'PROCESSING' ||
@@ -89,12 +80,9 @@ export function usePublicOrderStatus(
         status === 'DELIVERED' ||
         status === 'CANCELLED'
       ) {
-        return false
+        return false;
       }
-
-      return 3000
+      return 3000;
     },
-
-    refetchIntervalInBackground: true,
-  })
+  });
 }

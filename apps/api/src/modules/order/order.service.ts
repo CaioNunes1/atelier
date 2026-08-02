@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
  
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { OrderStatus, Prisma } from '@prisma/client';
@@ -162,9 +162,7 @@ export class OrderService {
     throw new NotFoundException('Pedido não encontrado');
   }
 
-  return {
-    status: order.status,
-  };
+  return { status: order.status };
 }
 
   async updateStatus(id: string, dto: UpdateOrderStatusDto): Promise<OrderEntity> {
