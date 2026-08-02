@@ -15,6 +15,7 @@ import { RegisterPage } from './features/auth/pages/RegisterPage';
 import { CheckoutFailurePage, CheckoutPendingPage, CheckoutSuccessPage } from './features/checkout/pages/CheckoutResultPages';
 import { Toaster } from 'sonner';
 import { OrdersPage } from './features/profile/pages/OrdersPage';
+import { OrderDetailPage } from './features/profile/pages/OrderDetailPage';
 
 function AppShell() {
   const [cartOpen, setCartOpen] = useState(false);
@@ -117,6 +118,7 @@ function AppShell() {
           <Route path="/checkout/falha"    element={<CheckoutFailurePage />} />
           <Route path="/checkout/pendente" element={<CheckoutPendingPage />} />
           <Route path="/profile/orders" element={<OrdersPage />} />
+          <Route path="/profile/orders/:id" element={<OrderDetailPage />} />
         </Routes>
       </main>
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
