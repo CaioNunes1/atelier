@@ -37,10 +37,11 @@ export class PaymentService {
   }
 
   const webUrl = this.configService.get<string>('WEB_URL') ?? 'http://localhost:5173';
+  const apiUrl = this.configService.get<string>('API_URL') ?? 'http://localhost:3333'
 
   const preference = new Preference(this.mp);
 
-  const shippingInCents = order.shippingInCents ?? 0
+  const shippingInCents = 0;
 
 const orderItems = order.items.map((item) => ({
   id:          item.productId,
@@ -60,6 +61,8 @@ if (shippingInCents > 0) {
   })
 }
 
+//const isProduction = this.configService.get('NODE_ENV') === 'production'
+
 const preferenceBody = {
   items: orderItems,
   payer: {
@@ -72,7 +75,7 @@ const preferenceBody = {
     pending: `${webUrl}/checkout/pendente`,
   },
   external_reference: order.id,
-  notification_url: `${webUrl}/api/payments/webhook`,
+  notification_url: `${apiUrl}/api/payments/webhook`,
 }
 
   console.log('Enviando para MP:', JSON.stringify(preferenceBody, null, 2))
@@ -89,51 +92,166 @@ const preferenceBody = {
   return { url: result.init_point! };
 }
 
-async handleWebhook(body: unknown) {
-  // O MP envia diferentes tipos de notificação
-  const notification = body as { type?: string; action?: string; data?: { id?: string } }
-  
-  console.log('Webhook recebido:', JSON.stringify(notification))
+async handleWebhook(data: {
+  paymentId: string;
+  body: unknown;
+  query: Record<string, string>;
+  signature?: string;
+  requestId?: string;
+}) {
+  const {
+    paymentId,
+    body,
+    query,
+    signature,
+    requestId,
+  } = data;
 
-  // Só processa notificações de pagamento
-  if (notification.type !== 'payment' && notification.action !== 'payment.updated') {
-    return
-  }
+  console.log('========================================');
+  console.log('PROCESSANDO WEBHOOK');
+  console.log('========================================');
 
-  const paymentId = notification.data?.id
-  if (!paymentId) return
+  console.log('Payment ID:', paymentId);
+  console.log('Body:', JSON.stringify(body, null, 2));
+  console.log('Query:', JSON.stringify(query, null, 2));
+  console.log('Signature:', signature);
+  console.log('Request ID:', requestId);
 
   try {
-    // Consulta o status do pagamento na API do MP
-    const { Payment } = await import('mercadopago')
-    const paymentClient = new Payment(this.mp)
-    const payment = await paymentClient.get({ id: paymentId })
+    const { Payment } = await import('mercadopago');
 
-    console.log('Status do pagamento:', payment.status, 'Order:', payment.external_reference)
+    const paymentClient = new Payment(this.mp);
 
-    const orderId = payment.external_reference
-    if (!orderId) return
+    /**
+     * Consulta o pagamento diretamente na API
+     * do Mercado Pago.
+     */
+    const payment = await paymentClient.get({
+      id: paymentId,
+    });
 
+    console.log('========================================');
+    console.log('PAGAMENTO ENCONTRADO');
+    console.log('========================================');
+
+    console.log('Payment ID:', payment.id);
+    console.log('Status:', payment.status);
+    console.log(
+      'External Reference:',
+      payment.external_reference,
+    );
+
+    /**
+     * A external_reference é o ID do nosso pedido.
+     *
+     * No createCheckout nós definimos:
+     *
+     * external_reference: order.id
+     */
+    const orderId = payment.external_reference;
+
+    if (!orderId) {
+      console.warn(
+        'Pagamento encontrado, mas não possui external_reference.',
+      );
+
+      return;
+    }
+
+    /**
+     * Pagamento aprovado
+     */
     if (payment.status === 'approved') {
-      // Muda status do pedido para PAID
+      const order = await this.prisma.order.findUnique({
+        where: {
+          id: orderId,
+        },
+      });
+
+      if (!order) {
+        console.warn(
+          `Pedido ${orderId} não encontrado.`,
+        );
+
+        return;
+      }
+
+      /**
+       * Evita atualizar novamente um pedido
+       * que já está pago.
+       */
+      if (order.status === 'PAID') {
+        console.log(
+          `Pedido ${orderId} já está como PAID.`,
+        );
+
+        return;
+      }
+
       await this.prisma.order.update({
-        where: { id: orderId },
-        data: { status: 'PAID' },
-      })
-      console.log('Pedido aprovado:', orderId)
+        where: {
+          id: orderId,
+        },
+        data: {
+          status: 'PAID',
+        },
+      });
+
+      console.log(
+        `Pedido ${orderId} atualizado para PAID.`,
+      );
+
+      return;
     }
 
-    if (payment.status === 'rejected' || payment.status === 'cancelled') {
+    /**
+     * Pagamento rejeitado ou cancelado
+     */
+    if (
+      payment.status === 'rejected' ||
+      payment.status === 'cancelled'
+    ) {
       await this.prisma.order.update({
-        where: { id: orderId },
-        data: { status: 'CANCELLED' },
-      })
-      console.log('Pedido cancelado:', orderId)
+        where: {
+          id: orderId,
+        },
+        data: {
+          status: 'CANCELLED',
+        },
+      });
+
+      console.log(
+        `Pedido ${orderId} atualizado para CANCELLED.`,
+      );
+
+      return;
     }
 
+    /**
+     * Outros estados:
+     *
+     * pending
+     * in_process
+     * authorized
+     *
+     * Nesse momento não alteramos o pedido.
+     */
+    console.log(
+      `Pagamento ${paymentId} está com status: ${payment.status}`,
+    );
   } catch (error) {
-    console.error('Erro ao processar webhook:', error)
-    // Não lança exceção — o MP vai retentar se der 500
+    console.error(
+      'Erro ao consultar/processar pagamento:',
+      error,
+    );
+
+    /**
+     * Importante:
+     *
+     * Relançamos o erro para o Controller saber
+     * que o processamento falhou.
+     */
+    throw error;
   }
 }
 }

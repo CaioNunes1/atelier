@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/features/cart/hooks/useCart';
 import { useIsAuthenticated } from '../../auth/hooks/useAuthMutations';
@@ -65,6 +65,14 @@ export function CheckoutPage() {
     () => addresses.find((address) => address.id === selectedAddressId) ?? addresses.find((address) => address.is_default) ?? addresses[0],
     [addresses, selectedAddressId],
   );
+
+//   useEffect(() => {
+//   if (!selectedAddress) return
+//   shippingQuote.mutate(
+//     { zip_code: selectedAddress.zip_code, subtotal_in_cents: subtotal },
+//     { onSuccess: (r) => setShipping(r.shipping_in_cents) }
+//   )
+// }, [selectedAddress?.id])
 
   const effectiveShipping = shipping;
   const discount = appliedCoupon?.discount_in_cents ?? 0;
@@ -153,34 +161,57 @@ export function CheckoutPage() {
       return;
     }
 
-    const result = await shippingQuote.mutateAsync({
+  const result = await shippingQuote.mutateAsync({
       zip_code: selectedAddress.zip_code,
       subtotal_in_cents: subtotal,
     });
     setShipping(result.shipping_in_cents);
   };
 
-  const finalizeOrder = async () => {
-    try {
-      if (!selectedAddress) {
-        setFormError('Selecione um endereço.')
-        return
-      }
-
-      const order = await createOrder.mutateAsync({
-        address_id: selectedAddress.id,
-        coupon_code: appliedCoupon?.code,
-      })
-      const payment = await checkoutPayment.mutateAsync({ order_id: order.id })
-      window.open(payment.url, '_blank', 'noopener,noreferrer');
-    } catch (error: unknown) {
-      // Mostra o erro real do backend
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response: { data: unknown } }
-        console.error('Erro do backend:', axiosError.response.data)
-        setFormError(JSON.stringify(axiosError.response.data))
-      }
+const finalizeOrder = async () => {
+  try {
+    if (!selectedAddress) {
+      setFormError('Selecione um endereço.')
+      return
     }
+
+
+    // Abre a janela ANTES da chamada assíncrona
+    // O browser permite window.open em resposta direta ao clique
+    const mpWindow = window.open('', '_blank')
+
+    if (!mpWindow) {
+      // Popup bloqueado — fallback para mesma aba
+      setFormError('Permita popups para continuar com o pagamento.')
+      return
+    }
+
+    // Mostra loading na janela enquanto processa
+    mpWindow.document.write(`
+      <html>
+        <body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#fdfaf7">
+          <p style="color:#555;font-size:14px">Preparando seu pagamento…</p>
+        </body>
+      </html>
+    `)
+
+    const order = await createOrder.mutateAsync({
+      address_id: selectedAddress.id,
+      coupon_code: appliedCoupon?.code,
+    })
+
+    const payment = await checkoutPayment.mutateAsync({ order_id: order.id })
+
+    // Redireciona a janela já aberta para a URL do MP
+    mpWindow.location.href = payment.url
+
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response: { data: unknown } }
+      console.error('Erro do backend:', axiosError.response.data)
+      setFormError(JSON.stringify(axiosError.response.data))
+    }
+  }
 }
 
   return (
@@ -282,15 +313,26 @@ export function CheckoutPage() {
                   </button>
                 </div>
               ) : null}
-              <div className="mt-6 flex justify-end">
+
+              <div className="mt-6 flex justify-between">
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
-                  disabled={!selectedAddressId}
-                  className="rounded-full bg-roseartisan-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-roseartisan-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={calculateShipping}
+                  className="rounded-full border border-roseartisan-200 px-5 py-3 text-sm font-semibold text-roseartisan-700"
                 >
-                  Continuar para revisão →
+                  Calcular frete
                 </button>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    disabled={!selectedAddressId}
+                    className="rounded-full bg-roseartisan-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-roseartisan-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Continuar para revisão →
+                  </button>
+                </div>
               </div>
             </div>  
           ) : null}
@@ -412,13 +454,6 @@ export function CheckoutPage() {
                 </div>
               ) : null}
 
-              <button
-                type="button"
-                onClick={calculateShipping}
-                className="rounded-full border border-roseartisan-200 px-5 py-3 text-sm font-semibold text-roseartisan-700"
-              >
-                Calcular frete
-              </button>
 
               <div className="mt-6 flex justify-between">
                 <button
