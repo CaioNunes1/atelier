@@ -54,10 +54,19 @@ export class PaymentController {
      *
      * Por isso tentamos os dois.
      */
+    const topic = body?.topic ?? query?.topic ?? body?.type;
     const paymentId =
       body?.data?.id ??
       query['data.id'] ??
       query['id'];
+
+    console.log('Webhook topic:', topic);
+    console.log('Payment ID:', paymentId);
+    
+      if (topic === 'merchant_order') {
+    // por enquanto ignora ou trata em outro método
+    return { received: true, processed: false, topic };
+  }
 
     if (!paymentId) {
       console.warn(

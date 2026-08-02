@@ -74,6 +74,7 @@ const preferenceBody = {
     failure: `${webUrl}/checkout/falha`,
     pending: `${webUrl}/checkout/pendente`,
   },
+  auto_return: 'approved',
   external_reference: order.id,
   notification_url: `${apiUrl}/api/payments/webhook`,
 }
