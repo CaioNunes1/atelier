@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch,  Post, UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -7,6 +7,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderService } from './order.service';
+
 
 @Controller('api/orders')
 @UseGuards(JwtAuthGuard)
@@ -25,11 +26,13 @@ export class OrderController {
     return { data: orders };
   }
 
-@Get('public/:id')
-async findPublicStatus(@Param('id', ParseUUIDPipe) id: string) {
-  const result = await this.orderService.getOrderPaymentStatus(id);
-  return { data: result };
-}
+  
+  @Get('public/:id')
+  @SkipAuth() // se você tiver esse decorator
+  async findPublicStatus(@Param('id', ParseUUIDPipe) id: string) {
+    const result = await this.orderService.getOrderPaymentStatus(id);
+    return { data: result };
+  }
 
   @Get(':id')
   async findOne(@CurrentUser() user: { id: string }, @Param('id', ParseUUIDPipe) id: string) {
@@ -62,3 +65,7 @@ export class AdminOrderController {
     return { data: order };
   }
 }
+function SkipAuth(): (target: OrderController, propertyKey: "findPublicStatus", descriptor: TypedPropertyDescriptor<(id: string) => Promise<{ data: { status: import("@prisma/client").OrderStatus; }; }>>) => void | TypedPropertyDescriptor<...> {
+  throw new Error('Function not implemented.');
+}
+
