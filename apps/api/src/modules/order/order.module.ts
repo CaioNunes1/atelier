@@ -4,14 +4,14 @@ import { AddressModule } from '../address/address.module';
 import { CartModule } from '../cart/cart.module';
 import { CouponModule } from '../coupon/coupon.module';
 import { OrderCronService } from './order-cron.service';
-import { AdminOrderController, OrderController } from './order.controller';
+import { AdminOrderController, OrderController, OrderPublicController } from './order.controller';
 import { OrderNotificationService } from './order-notification.service';
 import { OrderRepository } from './order.repository';
 import { OrderService } from './order.service';
 
 @Module({
   imports: [AddressModule, CartModule, CouponModule],
-  controllers: [OrderController, AdminOrderController],
+  controllers: [OrderController, AdminOrderController,OrderPublicController],
   providers: [
     OrderService,
     OrderRepository,

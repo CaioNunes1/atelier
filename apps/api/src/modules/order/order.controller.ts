@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch,  Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -8,7 +8,19 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderService } from './order.service';
 
+// ─── Rota pública — SEM guard ────────────────────────────────────────────────
+@Controller('api/orders')
+export class OrderPublicController {
+  constructor(private readonly orderService: OrderService) {}
 
+  @Get('public/:id')
+  async findPublicStatus(@Param('id', ParseUUIDPipe) id: string) {
+    const result = await this.orderService.getOrderPaymentStatus(id);
+    return { data: result };
+  }
+}
+
+// ─── Rotas do cliente — requer autenticação ───────────────────────────────────
 @Controller('api/orders')
 @UseGuards(JwtAuthGuard)
 export class OrderController {
@@ -26,14 +38,6 @@ export class OrderController {
     return { data: orders };
   }
 
-  
-  @Get('public/:id')
-  @SkipAuth() // se você tiver esse decorator
-  async findPublicStatus(@Param('id', ParseUUIDPipe) id: string) {
-    const result = await this.orderService.getOrderPaymentStatus(id);
-    return { data: result };
-  }
-
   @Get(':id')
   async findOne(@CurrentUser() user: { id: string }, @Param('id', ParseUUIDPipe) id: string) {
     const order = await this.orderService.getUserOrder(user.id, id);
@@ -41,6 +45,7 @@ export class OrderController {
   }
 }
 
+// ─── Rotas admin ──────────────────────────────────────────────────────────────
 @Controller('api/admin/orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -65,7 +70,3 @@ export class AdminOrderController {
     return { data: order };
   }
 }
-function SkipAuth(): (target: OrderController, propertyKey: "findPublicStatus", descriptor: TypedPropertyDescriptor<(id: string) => Promise<{ data: { status: import("@prisma/client").OrderStatus; }; }>>) => void | TypedPropertyDescriptor<...> {
-  throw new Error('Function not implemented.');
-}
-
