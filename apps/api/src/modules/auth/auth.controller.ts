@@ -95,22 +95,22 @@ export class AuthController {
     return { data: result };
   }
 
-  private setRefreshCookie(response: Response, refreshToken: string) {
-    response.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/api/auth',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-  }
+private setRefreshCookie(response: Response, refreshToken: string) {
+  response.cookie('refresh_token', refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  })
+}
 
-  private clearRefreshCookie(response: Response) {
-    response.clearCookie('refresh_token', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/api/auth',
-    });
-  }
+private clearRefreshCookie(response: Response) {
+  response.clearCookie('refresh_token', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    path: '/',
+  })
+}
 }
