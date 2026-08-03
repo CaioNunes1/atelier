@@ -175,35 +175,16 @@ const finalizeOrder = async () => {
       return
     }
 
-
-    // Abre a janela ANTES da chamada assíncrona
-    // O browser permite window.open em resposta direta ao clique
-    const mpWindow = window.open('', '_blank')
-
-    if (!mpWindow) {
-      // Popup bloqueado — fallback para mesma aba
-      setFormError('Permita popups para continuar com o pagamento.')
-      return
-    }
-
-    // Mostra loading na janela enquanto processa
-    mpWindow.document.write(`
-      <html>
-        <body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#fdfaf7">
-          <p style="color:#555;font-size:14px">Preparando seu pagamento…</p>
-        </body>
-      </html>
-    `)
-
+    // Sem window.open — redireciona na mesma aba
     const order = await createOrder.mutateAsync({
       address_id: selectedAddress.id,
       coupon_code: appliedCoupon?.code,
     })
 
     const payment = await checkoutPayment.mutateAsync({ order_id: order.id })
-
-    // Redireciona a janela já aberta para a URL do MP
-    mpWindow.location.href = payment.url
+    
+    // Redireciona na mesma aba — o MP vai trazer de volta via back_url
+    window.location.href = payment.url
 
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'response' in error) {
