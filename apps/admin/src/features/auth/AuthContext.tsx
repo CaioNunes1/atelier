@@ -3,6 +3,19 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { api, tokenStore } from '@/lib/axios'
 import type { AdminUser } from '@/types'
 
+let refreshPromise: Promise<unknown> | null = null
+
+async function refreshSession() {
+  if (!refreshPromise) {
+    refreshPromise = api.post('/api/auth/refresh', {})
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+
+  return refreshPromise
+}
+
 interface AuthCtx {
   user: AdminUser | null
   isAuthenticated: boolean
@@ -18,20 +31,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const initialized = useRef(false)
 
-  useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
-    api.post('/api/auth/refresh', {})
-      .then(({ data }) => {
-        tokenStore.set(data.data.access_token)
-        setUser(data.data.user)
-      })
-      .catch(() => {
-        tokenStore.clear()
-        setUser(null)
-      })
-      .finally(() => setIsLoading(false))
-  }, [])
+useEffect(() => {
+  if (initialized.current) return
+  initialized.current = true
+
+  refreshSession()
+    .then(({ data }) => {
+      tokenStore.set(data.data.access_token)
+      setUser(data.data.user)
+    })
+    .catch(() => {
+      tokenStore.clear()
+      setUser(null)
+    })
+    .finally(() => setIsLoading(false))
+}, [])
 
   useEffect(() => {
     const handle = () => { setUser(null); tokenStore.clear() }
