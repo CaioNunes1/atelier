@@ -26,12 +26,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   }
   return config
 })
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
+  
 // Flag para evitar loop de refresh
 let isRefreshing = false
 let failedQueue: Array<{
