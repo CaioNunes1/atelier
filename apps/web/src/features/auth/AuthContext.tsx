@@ -13,6 +13,7 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
+const HAD_SESSION_KEY = 'hadSession'
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -24,17 +25,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (initialized.current) return
     initialized.current = true
 
-    authApi
-      .refresh()
-      .then(({ data }) => {
+    const hadSession = typeof window !== 'undefined' && localStorage.getItem(HAD_SESSION_KEY) === '1'
+
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+    const attemptRefresh = async (attemptsLeft: number, delayMs = 500) => {
+      try {
+        const { data } = await authApi.refresh()
         tokenStore.set(data.access_token)
         setUser(data.user)
-      })
-      .catch(() => {
+      } catch (err) {
+        if (attemptsLeft > 0) {
+          await sleep(delayMs)
+          return attemptRefresh(attemptsLeft - 1, delayMs * 2)
+        }
+        // Se esgotaram as tentativas, limpa estado local
         tokenStore.clear()
         setUser(null)
-      })
-      .finally(() => setIsLoading(false))
+        if (hadSession) localStorage.removeItem(HAD_SESSION_KEY)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    // Se o usuário já tinha sessão, tenta várias vezes antes de decidir deslogar
+    attemptRefresh(hadSession ? 3 : 0)
   }, [])
 
   // Escuta evento de logout forçado pelo interceptor do Axios
@@ -42,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const handleForceLogout = () => {
       setUser(null)
       tokenStore.clear()
+      if (typeof window !== 'undefined') localStorage.removeItem(HAD_SESSION_KEY)
     }
     window.addEventListener('auth:logout', handleForceLogout)
     return () => window.removeEventListener('auth:logout', handleForceLogout)
@@ -50,11 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback((accessToken: string, userData: User) => {
     tokenStore.set(accessToken)
     setUser(userData)
+    if (typeof window !== 'undefined') localStorage.setItem(HAD_SESSION_KEY, '1')
   }, [])
 
   const logout = useCallback(async () => {
     tokenStore.clear()
     setUser(null)
+    if (typeof window !== 'undefined') localStorage.removeItem(HAD_SESSION_KEY)
     toast.success('Até logo!')
     try {
       await authApi.logout()

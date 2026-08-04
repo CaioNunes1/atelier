@@ -20,6 +20,13 @@ export const api = axios.create({
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = tokenStore.get()
   if (token) {
+    if (!config.headers) config.headers = {}
+    // @ts-ignore - headers typing
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
