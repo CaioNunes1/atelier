@@ -96,6 +96,7 @@ export class AuthController {
   }
 
 private setRefreshCookie(response: Response, refreshToken: string) {
+  // SameSite=None is required so the cookie is sent after cross-site redirects (Mercado Pago)
   response.cookie('refresh_token', refreshToken, {
     httpOnly: true,
     secure: true,
