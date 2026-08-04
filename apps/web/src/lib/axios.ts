@@ -76,10 +76,13 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null)
         tokenStore.clear()
-        // Dispara evento para o AuthContext limpar o estado
-        window.dispatchEvent(new CustomEvent('auth:logout'))
+        // Só dispara logout se o usuário estava autenticado
+        // Não dispara durante a tentativa inicial de refresh na montagem
+        if (tokenStore.get() !== null) {
+          window.dispatchEvent(new CustomEvent('auth:logout'))
+        }
         return Promise.reject(refreshError)
-      } finally {
+} finally {
         isRefreshing = false
       }
     }

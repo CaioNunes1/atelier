@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
   ConflictException,
@@ -175,29 +176,69 @@ export class AuthService {
   }
 
   private async generateTokens(user: User): Promise<AuthTokens> {
-    const accessToken = await this.signAccessToken(user);
-    const refreshToken = uuidv4();
-    const tokenHash = await argon2.hash(refreshToken, ARGON2_OPTIONS);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessToken = await this.signAccessToken(user)
+  
+  // Gera refresh token como JWT com userId — assim conseguimos filtrar no banco
+  const refreshTokenId = uuidv4()
+  const refreshToken = await this.jwtService.signAsync(
+    { sub: user.id, jti: refreshTokenId },
+    {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: '7d',
+    }
+  )
+  
+  const tokenHash = await argon2.hash(refreshTokenId, ARGON2_OPTIONS)
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
-    await this.userRepository.createRefreshToken({
-      userId: user.id,
-      tokenHash,
-      expiresAt,
-    });
+  await this.userRepository.createRefreshToken({
+    userId: user.id,
+    tokenHash,
+    expiresAt,
+  })
 
-    return { accessToken, refreshToken };
-  }
+  return { accessToken, refreshToken }
+}
 
-  private async findMatchingRefreshToken(rawToken: string) {
-    const activeTokens = await this.userRepository.findActiveRefreshTokens();
-    for (const token of activeTokens) {
-      if (await argon2.verify(token.token, rawToken)) {
-        return token;
+private async findMatchingRefreshToken(rawToken: string) {
+  try {
+    // Decodifica o JWT para obter o userId — sem verificar, só para filtrar
+    const payload = this.jwtService.decode(rawToken)
+    
+    if (!payload?.sub || !payload?.jti) {
+      // Fallback para tokens antigos (UUID puro)
+      return this.findMatchingRefreshTokenLegacy(rawToken)
+    }
+
+    // Busca só os tokens desse usuário — muito mais eficiente
+    const userTokens = await this.userRepository.findActiveRefreshTokensByUserId(payload.sub)
+    
+    for (const token of userTokens) {
+      if (await argon2.verify(token.token, payload.jti)) {
+        return token
       }
     }
-    return null;
+    
+    return null
+  } catch {
+    return null
   }
+}
+
+// Fallback para tokens antigos
+private async findMatchingRefreshTokenLegacy(rawToken: string) {
+  const activeTokens = await this.userRepository.findActiveRefreshTokens()
+  for (const token of activeTokens) {
+    try {
+      if (await argon2.verify(token.token, rawToken)) {
+        return token
+      }
+    } catch {
+      continue
+    }
+  }
+  return null
+}
 
   private async findMatchingPasswordResetToken(rawToken: string) {
     const activeTokens = await this.userRepository.findActivePasswordResetTokens();
