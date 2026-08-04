@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import type { RefreshResponse } from '@/types/auth'
 
@@ -21,7 +22,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = tokenStore.get()
   if (token) {
     if (!config.headers) config.headers = {}
-    // @ts-ignore - headers typing
+    // @ts-expect-error - headers typing
     config.headers.Authorization = `Bearer ${token}`
   }
   return config

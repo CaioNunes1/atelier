@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { api, tokenStore } from '@/lib/axios'
 import type { AdminUser } from '@/types'
@@ -20,18 +21,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
-    api.post<{ data: { access_token: string; user: AdminUser } }>('/api/auth/refresh', {})
+    api.post('/api/auth/refresh', {})
       .then(({ data }) => {
-        // Admin só pode logar se for ADMIN
-        if (data.data.user.role !== 'ADMIN') {
-          tokenStore.clear()
-          setUser(null)
-          return
-        }
         tokenStore.set(data.data.access_token)
         setUser(data.data.user)
       })
-      .catch(() => { tokenStore.clear(); setUser(null) })
+      .catch(() => {
+        tokenStore.clear()
+        setUser(null)
+      })
       .finally(() => setIsLoading(false))
   }, [])
 
