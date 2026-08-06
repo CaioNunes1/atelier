@@ -25,10 +25,13 @@ useEffect(() => {
   if (initialized.current) return
   initialized.current = true
 
+  // Timeout de 90 segundos para aguentar o Render acordando
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 90_000)
+
   authApi
     .refresh()
     .then(({ data }) => {
-      console.log('Refresh response completo:', JSON.stringify(data))
       tokenStore.set(data.access_token)
       setUser(data.user)
     })
@@ -36,7 +39,10 @@ useEffect(() => {
       tokenStore.clear()
       setUser(null)
     })
-    .finally(() => setIsLoading(false))
+    .finally(() => {
+      clearTimeout(timeoutId)
+      setIsLoading(false)
+    })
 }, [])
 
   // Escuta evento de logout forçado pelo interceptor do Axios
