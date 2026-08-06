@@ -21,36 +21,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initialized = useRef(false)
 
   // Ao montar, tenta renovar a sessão via cookie (refresh token)
-  useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
+useEffect(() => {
+  if (initialized.current) return
+  initialized.current = true
 
-    const hadSession = typeof window !== 'undefined' && localStorage.getItem(HAD_SESSION_KEY) === '1'
-
-    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
-
-    const attemptRefresh = async (attemptsLeft: number, delayMs = 500) => {
-      try {
-        const { data } = await authApi.refresh()
-        tokenStore.set(data.access_token)
-        setUser(data.user)
-      } catch (err) {
-        if (attemptsLeft > 0) {
-          await sleep(delayMs)
-          return attemptRefresh(attemptsLeft - 1, delayMs * 2)
-        }
-        // Se esgotaram as tentativas, limpa estado local
-        tokenStore.clear()
-        setUser(null)
-        if (hadSession) localStorage.removeItem(HAD_SESSION_KEY)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    // Se o usuário já tinha sessão, tenta várias vezes antes de decidir deslogar
-    attemptRefresh(hadSession ? 3 : 0)
-  }, [])
+  authApi
+    .refresh()
+    .then(({ data }) => {
+      tokenStore.set(data.access_token)
+      setUser(data.user)
+    })
+    .catch(() => {
+      tokenStore.clear()
+      setUser(null)
+    })
+    .finally(() => setIsLoading(false))
+}, [])
 
   // Escuta evento de logout forçado pelo interceptor do Axios
   useEffect(() => {
@@ -63,11 +49,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('auth:logout', handleForceLogout)
   }, [])
 
-  const login = useCallback((accessToken: string, userData: User) => {
-    tokenStore.set(accessToken)
-    setUser(userData)
-    if (typeof window !== 'undefined') localStorage.setItem(HAD_SESSION_KEY, '1')
-  }, [])
+const login = useCallback((accessToken: string, userData: User) => {
+  tokenStore.set(accessToken)
+  setUser(userData)
+}, [])
 
   const logout = useCallback(async () => {
     tokenStore.clear()
