@@ -28,6 +28,7 @@ useEffect(() => {
   authApi
     .refresh()
     .then(({ data }) => {
+      console.log('Refresh response completo:', JSON.stringify(data))
       tokenStore.set(data.access_token)
       setUser(data.user)
     })
