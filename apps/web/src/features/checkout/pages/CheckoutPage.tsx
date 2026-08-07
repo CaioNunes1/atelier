@@ -52,7 +52,7 @@ export function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_in_cents: number } | null>(null);
   const [shippingOptions, setShippingOptions] = useState<import('@/features/checkout/types').ShippingOption[]>([])
   const [selectedShippingId, setSelectedShippingId] = useState<string>('')
-  const shipping = shippingOptions.find(o => o.id === selectedShippingId)?.shipping_in_cents ?? 0
+  const shipping = Number(shippingOptions.find(o => o.id === selectedShippingId)?.shipping_in_cents ?? 0)
   const [cepError, setCepError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -76,9 +76,9 @@ export function CheckoutPage() {
 //   )
 // }, [selectedAddress?.id])
 
-  const effectiveShipping = shipping;
-  const discount = appliedCoupon?.discount_in_cents ?? 0;
-  const total = Math.max(0, subtotal - discount + effectiveShipping);
+  const effectiveShipping = isNaN(shipping) ? 0 : shipping
+  const discount = appliedCoupon?.discount_in_cents ?? 0
+  const total = Math.max(0, subtotal - discount + effectiveShipping)
 
   if (!authenticated) {
     return (
@@ -522,7 +522,7 @@ const finalizeOrder = async () => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span>Subtotal</span><strong>{formatPrice(subtotal)}</strong></div>
               <div className="flex justify-between"><span>Desconto</span><strong>- {formatPrice(discount)}</strong></div>
-              <div className="flex justify-between"><span>Frete</span><strong>{formatPrice(effectiveShipping)}</strong></div>
+              <div className="flex justify-between"><span>Frete</span><strong>{shippingOptions.length === 0 ? '—' : formatPrice(effectiveShipping)}</strong></div>
               <div className="border-t border-roseartisan-200 pt-2 flex justify-between text-base"><span>Total</span><strong>{formatPrice(total)}</strong></div>
             </div>
             <div className="text-sm text-stone-500">
