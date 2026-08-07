@@ -13,9 +13,15 @@ export interface Address {
   updated_at: string;
 }
 
+export interface ShippingOption {
+  id: string
+  label: string
+  shipping_in_cents: number
+  estimated_days: number
+}
+
 export interface ShippingQuote {
-  shipping_in_cents: number;
-  estimated_days: number;
+  options: ShippingOption[]
 }
 
 export interface CouponValidationResult {

@@ -50,7 +50,9 @@ export function CheckoutPage() {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_in_cents: number } | null>(null);
-  const [shipping, setShipping] = useState<number>(0);
+  const [shippingOptions, setShippingOptions] = useState<import('@/features/checkout/types').ShippingOption[]>([])
+  const [selectedShippingId, setSelectedShippingId] = useState<string>('')
+  const shipping = shippingOptions.find(o => o.id === selectedShippingId)?.shipping_in_cents ?? 0
   const [cepError, setCepError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -157,16 +159,19 @@ export function CheckoutPage() {
 
   const calculateShipping = async () => {
     if (!selectedAddress) {
-      setFormError('Selecione um endereço primeiro.');
-      return;
+      setFormError('Selecione um endereço primeiro.')
+      return
     }
-
-  const result = await shippingQuote.mutateAsync({
+    const result = await shippingQuote.mutateAsync({
       zip_code: selectedAddress.zip_code,
       subtotal_in_cents: subtotal,
-    });
-    setShipping(result.shipping_in_cents);
-  };
+    })
+    setShippingOptions(result.options)
+    // Seleciona automaticamente a primeira opção
+    if (result.options.length > 0) {
+      setSelectedShippingId(result.options[0].id)
+    }
+  }
 
 const finalizeOrder = async () => {
   try {
@@ -295,25 +300,52 @@ const finalizeOrder = async () => {
                 </div>
               ) : null}
 
-              <div className="mt-6 flex justify-between">
+              {/* Substitua o botão "Calcular frete" por este bloco */}
+              <div className="space-y-3">
                 <button
                   type="button"
                   onClick={calculateShipping}
-                  className="rounded-full border border-roseartisan-200 px-5 py-3 text-sm font-semibold text-roseartisan-700"
+                  disabled={shippingQuote.isPending}
+                  className="rounded-full border border-roseartisan-200 px-5 py-3 text-sm font-semibold text-roseartisan-700 disabled:opacity-50"
                 >
-                  Calcular frete
+                  {shippingQuote.isPending ? 'Calculando…' : 'Calcular frete'}
                 </button>
 
-                <div className="mt-6 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setStep(2)}
-                    disabled={!selectedAddressId}
-                    className="rounded-full bg-roseartisan-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-roseartisan-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Continuar para revisão →
-                  </button>
-                </div>
+                {/* Opções de frete — aparecem após calcular */}
+                {shippingOptions.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-stone-700">Escolha a forma de entrega:</p>
+                    {shippingOptions.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setSelectedShippingId(option.id)}
+                        className={`w-full rounded-2xl border p-4 text-left transition ${
+                          selectedShippingId === option.id
+                            ? 'border-roseartisan-500 bg-roseartisan-50'
+                            : 'border-roseartisan-200 bg-white hover:border-roseartisan-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-stone-900">{option.label}</p>
+                            {option.estimated_days > 0 && (
+                              <p className="text-xs text-stone-500 mt-0.5">
+                                Prazo estimado: {option.estimated_days} dias úteis
+                              </p>
+                            )}
+                            {option.estimated_days === 0 && (
+                              <p className="text-xs text-stone-500 mt-0.5">Combinar horário</p>
+                            )}
+                          </div>
+                          <span className={`text-sm font-semibold ${option.shipping_in_cents === 0 ? 'text-emerald-700' : 'text-stone-900'}`}>
+                            {option.shipping_in_cents === 0 ? 'Grátis' : formatPrice(option.shipping_in_cents)}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>  
           ) : null}
