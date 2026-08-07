@@ -236,19 +236,19 @@ private async findMatchingRefreshToken(rawToken: string) {
 }
 
 // Fallback para tokens antigos
-private async findMatchingRefreshTokenLegacy(rawToken: string) {
-  const activeTokens = await this.userRepository.findActiveRefreshTokens()
-  for (const token of activeTokens) {
-    try {
-      if (await argon2.verify(token.token, rawToken)) {
-        return token
-      }
-    } catch {
-      continue
-    }
-  }
-  return null
-}
+// private async findMatchingRefreshTokenLegacy(rawToken: string) {
+//   const activeTokens = await this.userRepository.findActiveRefreshTokens()
+//   for (const token of activeTokens) {
+//     try {
+//       if (await argon2.verify(token.token, rawToken)) {
+//         return token
+//       }
+//     } catch {
+//       continue
+//     }
+//   }
+//   return null
+// }
 
   private async findMatchingPasswordResetToken(rawToken: string) {
     const activeTokens = await this.userRepository.findActivePasswordResetTokens();
