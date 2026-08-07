@@ -55,13 +55,15 @@ export class UserRepository {
   }
 
   findActiveRefreshTokensByUserId(userId: string) {
-  return this.prisma.refreshToken.findMany({
-    where: {
-      userId,
-      expiresAt: { gt: new Date() },
-    },
-    include: { user: true },
-  })
+    return this.prisma.refreshToken.findMany({
+      where: {
+        userId,
+        expiresAt: { gt: new Date() },
+      },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    })
 }
 
 // Mantenha o findActiveRefreshTokens existente por compatibilidade
