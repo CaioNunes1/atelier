@@ -157,21 +157,21 @@ export function CheckoutPage() {
     });
   };
 
-  const calculateShipping = async () => {
-    if (!selectedAddress) {
-      setFormError('Selecione um endereço primeiro.')
-      return
-    }
-    const result = await shippingQuote.mutateAsync({
-      zip_code: selectedAddress.zip_code,
-      subtotal_in_cents: subtotal,
-    })
-    setShippingOptions(result.options)
-    // Seleciona automaticamente a primeira opção
-    if (result.options.length > 0) {
-      setSelectedShippingId(result.options[0].id)
-    }
+const calculateShipping = async () => {
+  if (!selectedAddress) {
+    setFormError('Selecione um endereço primeiro.')
+    return
   }
+  const result = await shippingQuote.mutateAsync({
+    zip_code: selectedAddress.zip_code,
+    subtotal_in_cents: subtotal,
+  })
+  console.log('resultado do frete:', result) // ← veja o que chega aqui
+  setShippingOptions(result.options)
+  if (result.options.length > 0) {
+    setSelectedShippingId(result.options[0].id)
+  }
+}
 
 const finalizeOrder = async () => {
   try {

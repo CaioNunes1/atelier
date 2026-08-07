@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {api} from '@/lib/axios';
-import type { CouponValidationResult, Order, OrderStatus, ShippingQuote } from '../types';
+import type { CouponValidationResult, Order, OrderStatus } from '../types';
 import { publicApi } from '@/lib/publicAxios';
 
 export function useValidateCoupon() {
@@ -12,10 +12,14 @@ export function useValidateCoupon() {
   });
 }
 
+// Atualize o tipo de retorno
 export function useShippingQuote() {
   return useMutation({
     mutationFn: async (input: { zip_code: string; subtotal_in_cents: number }) => {
-      const response = await api.post<{ data: ShippingQuote }>('/api/shipping/calculate', input)
+      const response = await api.post<{ data: { options: import('@/features/checkout/types').ShippingOption[] } }>(
+        '/api/shipping/calculate',
+        input
+      )
       return response.data.data
     },
   })

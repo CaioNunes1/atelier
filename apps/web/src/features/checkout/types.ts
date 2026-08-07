@@ -20,6 +20,7 @@ export interface ShippingOption {
   estimated_days: number
 }
 
+// Remova ou atualize o ShippingQuote antigo
 export interface ShippingQuote {
   options: ShippingOption[]
 }
