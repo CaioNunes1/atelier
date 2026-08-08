@@ -1,24 +1,52 @@
-import { CartItem } from './CartItem';
-import { CartSummary } from './CartSummary';
-import { useCart } from '../hooks/useCart';
+import { useEffect } from 'react'
+import { CartItem } from './CartItem'
+import { CartSummary } from './CartSummary'
+import { useCart } from '../hooks/useCart'
 
 type CartDrawerProps = {
-  open: boolean;
-  onClose: () => void;
-};
+  open: boolean
+  onClose: () => void
+}
 
 export function CartDrawer({ open, onClose }: CartDrawerProps) {
-  const { cart, isLoading, updateQuantity, removeItem, clearCart } = useCart();
+  const { cart, isLoading, updateQuantity, removeItem, clearCart } = useCart()
 
-  if (!open) {
-    return null;
-  }
+  useEffect(() => {
+    if (!open) return
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleEsc)
+
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', handleEsc)
+    }
+  }, [open, onClose])
+
+  if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50">
-      <button type="button" className="absolute inset-0 bg-stone-900/35" onClick={onClose} aria-label="Fechar carrinho" />
+      <button
+        type="button"
+        className="absolute inset-0 bg-stone-900/35"
+        onClick={onClose}
+        aria-label="Fechar carrinho"
+      />
 
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-[0_20px_60px_rgba(120,63,54,0.25)]">
+      <aside
+        className="
+          absolute right-0 top-0 flex h-full w-full flex-col bg-white shadow-[0_20px_60px_rgba(120,63,54,0.25)]
+          md:max-w-md
+          rounded-t-3xl md:rounded-none
+          max-h-[88vh] md:max-h-none
+          bottom-0 md:bottom-auto
+        "
+      >
         <div className="flex items-center justify-between border-b border-roseartisan-200 p-5">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-roseartisan-700">Seu carrinho</p>
@@ -74,5 +102,5 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
         </div>
       </aside>
     </div>
-  );
+  )
 }
