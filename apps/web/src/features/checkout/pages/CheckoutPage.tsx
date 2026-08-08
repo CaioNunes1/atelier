@@ -310,12 +310,12 @@ const finalizeOrder = async () => {
                 </div>
               ) : null}
 
-              {/* Substitua o botão "Calcular frete" por este bloco */}
-              <div className="space-y-3">
+              {/* Bloco de frete + botão continuar */}
+              <div className="space-y-4 pt-2">
                 <button
                   type="button"
                   onClick={calculateShipping}
-                  disabled={shippingQuote.isPending}
+                  disabled={shippingQuote.isPending || !selectedAddressId}
                   className="rounded-full border border-roseartisan-200 px-5 py-3 text-sm font-semibold text-roseartisan-700 disabled:opacity-50"
                 >
                   {shippingQuote.isPending ? 'Calculando…' : 'Calcular frete'}
@@ -339,12 +339,11 @@ const finalizeOrder = async () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-medium text-stone-900">{option.label}</p>
-                            {option.estimated_days > 0 && (
+                            {option.estimated_days > 0 ? (
                               <p className="text-xs text-stone-500 mt-0.5">
                                 Prazo estimado: {option.estimated_days} dias úteis
                               </p>
-                            )}
-                            {option.estimated_days === 0 && (
+                            ) : (
                               <p className="text-xs text-stone-500 mt-0.5">Combinar horário</p>
                             )}
                           </div>
@@ -357,13 +356,18 @@ const finalizeOrder = async () => {
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => setStep(3)}
-                  className="rounded-full bg-roseartisan-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-roseartisan-800"
-                >
-                  Continuar para revisão →
-                </button>
+                {/* Botão continuar — só aparece após escolher uma opção de entrega */}
+                {selectedShippingId && (
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="rounded-full bg-roseartisan-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-roseartisan-800"
+                    >
+                      Continuar para revisão →
+                    </button>
+                  </div>
+                )}
               </div>
             </div>  
           ) : null}
