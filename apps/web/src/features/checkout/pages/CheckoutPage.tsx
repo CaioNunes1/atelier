@@ -76,7 +76,7 @@ export function CheckoutPage() {
 //   )
 // }, [selectedAddress?.id])
 
-  const effectiveShipping = isNaN(shipping) ? 0 : shipping
+  const effectiveShipping = shippingOptions.length === 0 ? 0 : (isNaN(shipping) ? 0 : shipping)
   const discount = appliedCoupon?.discount_in_cents ?? 0
   const total = Math.max(0, subtotal - discount + effectiveShipping)
 
@@ -162,14 +162,19 @@ const calculateShipping = async () => {
     setFormError('Selecione um endereço primeiro.')
     return
   }
-  const result = await shippingQuote.mutateAsync({
-    zip_code: selectedAddress.zip_code,
-    subtotal_in_cents: subtotal,
-  })
-  console.log('resultado do frete:', result) // ← veja o que chega aqui
-  setShippingOptions(result.options)
-  if (result.options.length > 0) {
-    setSelectedShippingId(result.options[0].id)
+  try {
+    const result = await shippingQuote.mutateAsync({
+      zip_code: selectedAddress.zip_code,
+      subtotal_in_cents: subtotal,
+    })
+    console.log('resultado do frete:', JSON.stringify(result))
+    setShippingOptions(result.options)
+    if (result.options.length > 0) {
+      setSelectedShippingId(result.options[0].id)
+    }
+  } catch (err) {
+    console.error('erro no frete:', err)
+    setFormError('Erro ao calcular frete: ' + String(err))
   }
 }
 
@@ -523,7 +528,11 @@ const finalizeOrder = async () => {
               <div className="flex justify-between"><span>Subtotal</span><strong>{formatPrice(subtotal)}</strong></div>
               <div className="flex justify-between"><span>Desconto</span><strong>- {formatPrice(discount)}</strong></div>
               <div className="flex justify-between"><span>Frete</span><strong>{shippingOptions.length === 0 ? '—' : formatPrice(effectiveShipping)}</strong></div>
-              <div className="border-t border-roseartisan-200 pt-2 flex justify-between text-base"><span>Total</span><strong>{formatPrice(total)}</strong></div>
+              <div className="border-t border-roseartisan-200 pt-2 flex justify-between text-base">  <span>Total</span>
+                <strong>
+                  {shippingOptions.length === 0 ? '—' : formatPrice(total)}
+                </strong>
+              </div>
             </div>
             <div className="text-sm text-stone-500">
               {selectedAddress ? `Entrega para ${selectedAddress.city}/${selectedAddress.state}` : 'Selecione um endereço.'}
