@@ -41,7 +41,7 @@ export class PaymentService {
 
   const preference = new Preference(this.mp);
 
-  const shippingInCents = 0;
+  const shippingInCents = order.shippingInCents;
 
 const orderItems = order.items.map((item) => ({
   id:          item.productId,

@@ -184,10 +184,15 @@ const finalizeOrder = async () => {
       setFormError('Selecione um endereço.')
       return
     }
+    if (!selectedShippingId) {
+      setFormError('Calcule o frete e escolha uma forma de entrega antes de finalizar.')
+      return
+    }
 
     // Sem window.open — redireciona na mesma aba
     const order = await createOrder.mutateAsync({
       address_id: selectedAddress.id,
+      shipping_option_id: selectedShippingId,
       coupon_code: appliedCoupon?.code,
     })
 

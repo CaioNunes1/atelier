@@ -5,6 +5,7 @@ import { OrderStatus, Prisma } from '@prisma/client';
 import { EventEmitter2 } from 'eventemitter2';
 import { CouponRepository } from '../coupon/coupon.repository';
 import { CouponService } from '../coupon/coupon.service';
+import { ShippingService } from '../shipping/shipping.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderEntity } from './entities/order.entity';
@@ -24,6 +25,7 @@ export class OrderService {
     private readonly orderRepository: OrderRepository,
     private readonly couponService: CouponService,
     private readonly couponRepository: CouponRepository,
+    private readonly shippingService: ShippingService,
     private readonly emitter: EventEmitter2,
   ) {}
 
@@ -86,7 +88,17 @@ export class OrderService {
       });
 
       const subtotal = items.reduce((sum, item) => sum + item.unitPriceInCents * item.quantity, 0);
-      const shipping = subtotal >= 30000 ? 0 : 1500;
+      const shippingOptions = this.shippingService.calculate({
+        zip_code: address.zipCode,
+        subtotal_in_cents: subtotal,
+      }).options;
+      const selectedShipping = shippingOptions.find((option) => option.id === dto.shipping_option_id);
+
+      if (!selectedShipping) {
+        throw new BadRequestException('Opção de frete inválida');
+      }
+
+      const shipping = selectedShipping.shipping_in_cents;
       const discountInCents = dto.coupon_code
         ? (await this.couponService.validate({
             code: dto.coupon_code,

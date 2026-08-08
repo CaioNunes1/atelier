@@ -1,9 +1,13 @@
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateOrderDto {
   @IsUUID()
   address_id!: string;
+
+  @IsString()
+  @IsIn(['pickup', 'delivery'])
+  shipping_option_id!: string;
 
   @IsOptional()
   @IsString()

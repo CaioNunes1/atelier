@@ -27,7 +27,7 @@ export function useShippingQuote() {
 
 export function useCreateOrder() {
   return useMutation({
-    mutationFn: async (input: { address_id: string; coupon_code?: string }) => {
+    mutationFn: async (input: { address_id: string; shipping_option_id: string; coupon_code?: string }) => {
       const response = await api.post<{ data: Order }>('/api/orders', input);
       return response.data.data;
     },
