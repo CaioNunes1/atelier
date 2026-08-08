@@ -3,7 +3,14 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**"]
+      "outputs": ["dist/**", "build/**"],
+      "env": [
+        "STORAGE_ENDPOINT",
+        "STORAGE_REGION",
+        "STORAGE_ACCESS_KEY",
+        "STORAGE_SECRET_KEY",
+        "STORAGE_BUCKET"
+      ]
     },
     "dev": {
       "cache": false,
