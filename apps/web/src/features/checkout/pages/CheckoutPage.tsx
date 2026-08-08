@@ -356,6 +356,14 @@ const finalizeOrder = async () => {
                     ))}
                   </div>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="rounded-full bg-roseartisan-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-roseartisan-800"
+                >
+                  Continuar para revisão →
+                </button>
               </div>
             </div>  
           ) : null}
