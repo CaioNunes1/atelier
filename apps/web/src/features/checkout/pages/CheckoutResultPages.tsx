@@ -96,7 +96,7 @@ export function CheckoutSuccessPage() {
 
         {orderId && (
           <Link
-            to={`/pedidos/${orderId}`}
+            to={`/profile/orders/${orderId}`}
             className="inline-flex rounded-full border border-roseartisan-200 px-6 py-3 text-sm font-semibold text-roseartisan-700 transition hover:bg-roseartisan-50"
           >
             Ver meu pedido
