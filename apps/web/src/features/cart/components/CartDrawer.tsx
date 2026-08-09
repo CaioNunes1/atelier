@@ -38,15 +38,11 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
         aria-label="Fechar carrinho"
       />
 
-      <aside
-        className="
-          absolute right-0 top-0 flex h-full w-full flex-col bg-white shadow-[0_20px_60px_rgba(120,63,54,0.25)]
-          md:max-w-md
-          rounded-t-3xl md:rounded-none
-          max-h-[88vh] md:max-h-none
-          bottom-0 md:bottom-auto
-        "
-      >
+      <aside className="
+        fixed bottom-0 left-0 right-0 flex max-h-[85vh] w-full flex-col bg-white shadow-[0_20px_60px_rgba(120,63,54,0.25)]
+        rounded-t-3xl
+        md:top-0 md:bottom-auto md:left-auto md:right-0 md:h-full md:max-h-none md:w-full md:max-w-md md:rounded-none
+      ">
         <div className="flex items-center justify-between border-b border-roseartisan-200 p-5">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-roseartisan-700">Seu carrinho</p>

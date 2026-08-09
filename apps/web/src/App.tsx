@@ -36,70 +36,59 @@ function AppShell() {
     }
   }, [isAuthenticated, mergeGuestCart])
 
+  const navLinkClass =
+    'shrink-0 whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-roseartisan-50 hover:text-roseartisan-700';
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(248,228,224,0.85),_transparent_35%),linear-gradient(180deg,_#fffaf8_0%,_#fffdfd_100%)] text-stone-700">
+    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(248,228,224,0.85),_transparent_35%),linear-gradient(180deg,_#fffaf8_0%,_#fffdfd_100%)] text-stone-700">
       <header className="sticky top-0 z-20 border-b border-roseartisan-200/80 bg-white/80 backdrop-blur">
-        <div className="container-page flex items-center justify-between gap-4 py-4">
-          <Link to="/" className="font-display text-2xl text-stone-900">
-            Atelier
-          </Link>
-          <nav className="flex items-center gap-2 text-sm font-medium">
-            <Link
-              to="/"
-              className="rounded-full px-4 py-2 transition hover:bg-roseartisan-50 hover:text-roseartisan-700"
-            >
-              Home
+        <div className="container-page py-3">
+          <div className="flex items-center justify-between gap-3">
+            <Link to="/" className="font-display text-2xl text-stone-900">
+              Atelier
             </Link>
-            <Link
-              to="/catalog"
-              className="rounded-full px-4 py-2 transition hover:bg-roseartisan-50 hover:text-roseartisan-700"
-            >
-              Catálogo
-            </Link>
-            <Link
-              to="/profile/favorites"
-              className="rounded-full px-4 py-2 transition hover:bg-roseartisan-50 hover:text-roseartisan-700"
-            >
-              Favoritos
-            </Link>
-            {!isAuthenticated && (
-              <nav>
-                <Link
-                  to="/cadastro"
-                  className="rounded-full px-4 py-2 transition hover:bg-roseartisan-50 hover:text-roseartisan-700"
-                >
-                  Cadastro
-                </Link>
-                <Link
-                to="/login"
-                className="rounded-full px-4 py-2 transition hover:bg-roseartisan-50 hover:text-roseartisan-700"
-              >
-                Login
-              </Link>
-            </nav>
-            )}
-            {isAuthenticated && (
-              <div>
-              <Link
-              to="/profile/orders"
-              className="rounded-full px-4 py-2 transition hover:bg-roseartisan-50 hover:text-roseartisan-700"
-            >
-              Pedidos
-            </Link>
-                  <button
-                  type="button"
-                   
-                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                  onClick={() => logout()}
-                  className="rounded-full px-4 py-2 text-roseartisan-700 transition hover:bg-roseartisan-50 hover:text-roseartisan-800"
-                >
-                  Sair
-                </button>
-            </div>
-            
-            )}
-            
             <CartIcon totalItems={cart.total_items} onClick={() => setCartOpen(true)} />
+          </div>
+
+          <nav className="-mx-4 mt-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+            <div className="flex w-max items-center gap-2 pb-1 text-sm font-medium">
+              <Link to="/" className={navLinkClass}>
+                Home
+              </Link>
+              <Link to="/catalog" className={navLinkClass}>
+                Catálogo
+              </Link>
+              <Link to="/profile/favorites" className={navLinkClass}>
+                Favoritos
+              </Link>
+
+              {!isAuthenticated && (
+                <>
+                  <Link to="/cadastro" className={navLinkClass}>
+                    Cadastro
+                  </Link>
+                  <Link to="/login" className={navLinkClass}>
+                    Login
+                  </Link>
+                </>
+              )}
+
+              {isAuthenticated && (
+                <>
+                  <Link to="/profile/orders" className={navLinkClass}>
+                    Pedidos
+                  </Link>
+                  <button
+                    type="button"
+                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                    onClick={() => logout()}
+                    className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-roseartisan-700 transition hover:bg-roseartisan-50 hover:text-roseartisan-800"
+                  >
+                    Sair
+                  </button>
+                </>
+              )}
+            </div>
           </nav>
         </div>
       </header>
