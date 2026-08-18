@@ -10,6 +10,7 @@ interface AuthContextValue {
   isLoading: boolean
   login: (accessToken: string, user: User) => void
   logout: () => Promise<void>
+  updateUser: (user: User) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -81,6 +82,7 @@ const login = useCallback((accessToken: string, userData: User) => {
         isLoading,
         login,
         logout,
+        updateUser: setUser,
       }}
     >
       {children}

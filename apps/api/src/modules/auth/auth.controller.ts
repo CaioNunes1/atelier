@@ -1,11 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
   HttpCode,
   Post,
   Req,
   Res,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
@@ -16,6 +19,9 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('api/auth')
 export class AuthController {
@@ -114,4 +120,30 @@ private clearRefreshCookie(response: Response) {
     path: '/',
   })
 }
+}
+
+@Controller('api/me')
+@UseGuards(JwtAuthGuard)
+export class ProfileController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Get()
+  async get(@CurrentUser() user: { id: string }) {
+    return { data: await this.authService.getProfile(user.id) };
+  }
+
+  @Patch()
+  async update(@CurrentUser() user: { id: string }, @Body() dto: UpdateProfileDto) {
+    return { data: await this.authService.updateProfile(user.id, dto) };
+  }
+
+  @Patch('password')
+  async changePassword(@CurrentUser() user: { id: string }, @Body() dto: ChangePasswordDto) {
+    return { data: await this.authService.changePassword(user.id, dto) };
+  }
+
+  @Delete()
+  async remove(@CurrentUser() user: { id: string }) {
+    return { data: await this.authService.deleteAccount(user.id) };
+  }
 }

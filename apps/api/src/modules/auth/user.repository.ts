@@ -15,6 +15,28 @@ export class UserRepository {
     });
   }
 
+  findById(id: string) {
+    return this.prisma.user.findFirst({ where: { id, deletedAt: null } });
+  }
+
+  updateProfile(id: string, data: { name: string; email: string }) {
+    return this.prisma.user.update({ where: { id }, data });
+  }
+
+  anonymizeUser(id: string, anonymizedEmail: string) {
+    return this.prisma.$transaction([
+      this.prisma.refreshToken.deleteMany({ where: { userId: id } }),
+      this.prisma.passwordResetToken.deleteMany({ where: { userId: id } }),
+      this.prisma.favorite.deleteMany({ where: { userId: id } }),
+      this.prisma.cart.updateMany({ where: { userId: id }, data: { userId: null } }),
+      this.prisma.address.deleteMany({ where: { userId: id } }),
+      this.prisma.user.update({
+        where: { id },
+        data: { name: 'Usuário Removido', email: anonymizedEmail, deletedAt: new Date() },
+      }),
+    ]);
+  }
+
   createUser(params: { name: string; email: string; passwordHash: string }) {
     const { name, email, passwordHash } = params;
     return this.prisma.user.create({

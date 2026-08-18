@@ -5,6 +5,7 @@ import {
   ConflictException,
   Injectable,
   Logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -18,6 +19,8 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserEntity } from './entities/user.entity';
 import { UserRepository } from './user.repository';
 
@@ -297,5 +300,37 @@ private async findMatchingRefreshToken(rawToken: string) {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  async getProfile(userId: string): Promise<UserEntity> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    return this.toUserEntity(user);
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<UserEntity> {
+    const emailOwner = await this.userRepository.findByEmail(dto.email);
+    if (emailOwner && emailOwner.id !== userId) throw new ConflictException('Email já cadastrado');
+    const user = await this.userRepository.updateProfile(userId, dto);
+    return this.toUserEntity(user);
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<{ success: boolean }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    if (!(await argon2.verify(user.passwordHash, dto.current_password))) {
+      throw new UnauthorizedException('Senha atual incorreta');
+    }
+    const passwordHash = await argon2.hash(dto.password, ARGON2_OPTIONS);
+    await this.userRepository.updateUserPassword(userId, passwordHash);
+    await this.userRepository.deleteAllRefreshTokensFromUser(userId);
+    return { success: true };
+  }
+
+  async deleteAccount(userId: string): Promise<{ success: boolean }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    await this.userRepository.anonymizeUser(userId, `deleted-${userId}@anonymized.invalid`);
+    return { success: true };
   }
 }

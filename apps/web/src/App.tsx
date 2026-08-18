@@ -16,6 +16,8 @@ import { CheckoutFailurePage, CheckoutPendingPage, CheckoutSuccessPage } from '.
 import { Toaster } from 'sonner';
 import { OrdersPage } from './features/profile/pages/OrdersPage';
 import { OrderDetailPage } from './features/profile/pages/OrderDetailPage';
+import { AccountPage } from './features/profile/pages/AccountPage';
+import { PrivateRoute } from './routes/guards';
 
 function AppShell() {
   const [cartOpen, setCartOpen] = useState(false);
@@ -65,6 +67,7 @@ function AppShell() {
               {isAuthenticated && (
                 <>
                   <Link to="/profile/orders" className={navLinkClass}>Pedidos</Link>
+                  <Link to="/profile/account" className={navLinkClass}>Minha conta</Link>
                   <button
                     type="button"
                     onClick={() => logout()}
@@ -103,7 +106,8 @@ function AppShell() {
 
                 {isAuthenticated && (
                   <>
-                    <Link to="/profile/orders" className={navLinkClass}>Pedidos</Link>
+                  <Link to="/profile/orders" className={navLinkClass}>Pedidos</Link>
+                  <Link to="/profile/account" className={navLinkClass}>Minha conta</Link>
                     <button
                       type="button"
                       onClick={() => logout()}
@@ -133,8 +137,11 @@ function AppShell() {
           <Route path="/checkout/sucesso"  element={<CheckoutSuccessPage />} />
           <Route path="/checkout/falha"    element={<CheckoutFailurePage />} />
           <Route path="/checkout/pendente" element={<CheckoutPendingPage />} />
-          <Route path="/profile/orders" element={<OrdersPage />} />
-          <Route path="/profile/orders/:id" element={<OrderDetailPage />} />
+          <Route element={<PrivateRoute />}>
+            <Route path="/profile/account" element={<AccountPage />} />
+            <Route path="/profile/orders" element={<OrdersPage />} />
+            <Route path="/profile/orders/:id" element={<OrderDetailPage />} />
+          </Route>
         </Routes>
       </main>
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />

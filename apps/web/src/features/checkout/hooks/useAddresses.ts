@@ -37,3 +37,20 @@ export function useCreateAddress() {
     },
   });
 }
+
+export function useUpdateAddress() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: AddressInput }) =>
+      (await api.patch<{ data: Address }>(`/api/me/addresses/${id}`, input)).data.data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['addresses'] }),
+  });
+}
+
+export function useDeleteAddress() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/me/addresses/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['addresses'] }),
+  });
+}
