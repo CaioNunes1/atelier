@@ -15,10 +15,11 @@ COPY . .
 RUN pnpm --filter api build
 
 FROM node:20-alpine AS runner
+RUN npm install -g pnpm
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder /app/apps/api/prisma ./prisma
 COPY --from=builder /app/node_modules ./node_modules
 EXPOSE 3333
-CMD ["node", "dist/main.js"]
+CMD ["/bin/sh", "-c", "pnpm exec prisma migrate deploy && exec node dist/main.js"]

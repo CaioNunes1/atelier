@@ -59,4 +59,6 @@ EXPOSE 3333
 
 WORKDIR /app/apps/api
 
-CMD ["node", "dist/src/main.js"]
+# O plano gratuito do Render não oferece pre-deploy command.
+# Aplica apenas migrations pendentes antes de iniciar a API.
+CMD ["/bin/sh", "-c", "pnpm exec prisma migrate deploy && exec node dist/src/main.js"]
