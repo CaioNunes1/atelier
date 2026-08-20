@@ -13,7 +13,6 @@ import { ConfigService } from '@nestjs/config';
 import { User, UserRole } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { randomBytes } from 'crypto';
-import { Resend } from 'resend';
 import { v4 as uuidv4 } from 'uuid';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -23,6 +22,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserEntity } from './entities/user.entity';
 import { UserRepository } from './user.repository';
+import { EmailService } from '../email/email.service';
 
 interface AuthTokens {
   accessToken: string;
@@ -50,6 +50,7 @@ export class AuthService {
     private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   async register(dto: RegisterDto, ipAddress?: string): Promise<{ user: UserEntity }> {
@@ -64,6 +65,7 @@ export class AuthService {
       email: dto.email,
       passwordHash,
     });
+    await this.emailService.welcome(user.email, user.name);
 
     this.logger.log(`register_success email=${user.email} ip=${ipAddress ?? 'unknown'}`);
     return { user: this.toUserEntity(user) };
@@ -157,7 +159,7 @@ export class AuthService {
     }
 
     const resetUrl = `${webUrl}/reset-password?token=${resetToken}`;
-    await this.sendResetEmail(user.email, user.name, resetUrl);
+    await this.emailService.passwordReset(user.email, user.name, resetUrl);
 
     this.logger.log(`forgot_password_success userId=${user.id} ip=${ipAddress ?? 'unknown'}`);
     return { message: 'Se o email existir, enviaremos as instruções de recuperação.' };
@@ -174,6 +176,7 @@ export class AuthService {
     await this.userRepository.updateUserPassword(storedToken.user.id, passwordHash);
     await this.userRepository.markPasswordResetTokenAsUsed(storedToken.id);
     await this.userRepository.deleteAllRefreshTokensFromUser(storedToken.user.id);
+    await this.emailService.passwordChanged(storedToken.user.email, storedToken.user.name);
 
     this.logger.log(`reset_password_success userId=${storedToken.user.id} ip=${ipAddress ?? 'unknown'}`);
     return { success: true };
@@ -273,21 +276,6 @@ private async findMatchingRefreshToken(rawToken: string) {
     return this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
       expiresIn: 900,
-    });
-  }
-
-  private async sendResetEmail(email: string, name: string | null, resetUrl: string): Promise<void> {
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
-    if (!apiKey) {
-      throw new BadRequestException('RESEND_API_KEY não configurada');
-    }
-
-    const resend = new Resend(apiKey);
-    await resend.emails.send({
-      from: 'onboarding@resend.dev',
-      to: email,
-      subject: 'Redefinição de senha',
-      html: `<p>Olá ${name ?? ''},</p><p>Use o link abaixo para redefinir sua senha:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>Este link expira em 1 hora.</p>`,
     });
   }
 

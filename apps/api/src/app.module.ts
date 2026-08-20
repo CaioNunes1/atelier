@@ -17,6 +17,7 @@ import { OrderModule } from './modules/order/order.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ShippingModule } from './modules/shipping/shipping.module';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ShippingModule } from './modules/shipping/shipping.module';
     OrderModule,
     PaymentModule,
     ShippingModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [

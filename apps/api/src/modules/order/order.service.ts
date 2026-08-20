@@ -30,7 +30,7 @@ export class OrderService {
   ) {}
 
   async create(userId: string, dto: CreateOrderDto): Promise<OrderEntity> {
-    return this.orderRepository.transactional(async (tx) => {
+    const result = await this.orderRepository.transactional(async (tx) => {
       const cart = await tx.cart.findUnique({
         where: { userId },
         include: {
@@ -136,8 +136,11 @@ export class OrderService {
       });
 
       await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (user) this.emitter.emit('order.created', { email: user.email, name: user.name, orderId: order.id, status: order.status });
       return this.toEntity(order);
     });
+    return result;
   }
 
   async listUserOrders(userId: string): Promise<OrderEntity[]> {
@@ -198,7 +201,7 @@ export class OrderService {
         })) as OrderWithRelations);
       }
 
-      await this.applyStatusTransition(tx, order, dto.status);
+      await this.applyStatusTransition(tx, order, dto.status, dto.tracking_code);
 
       const updated = await tx.order.findUnique({
         where: { id },
@@ -209,7 +212,7 @@ export class OrderService {
         throw new NotFoundException('Pedido não encontrado');
       }
 
-      this.emitStatusChanged(order.user.email, order.user.name, order.id, dto.status);
+      this.emitStatusChanged(order.user.email, order.user.name, order.id, dto.status, dto.tracking_code);
       return this.toEntity(updated);
     });
   }
@@ -247,6 +250,7 @@ export class OrderService {
     tx: Prisma.TransactionClient,
     order: { id: string; status: OrderStatus; items: Array<{ productId: string; variantId: string | null; quantity: number }>; couponCode: string | null },
     nextStatus: OrderStatus,
+    trackingCode?: string,
   ) {
     if (nextStatus === OrderStatus.CANCELLED && (order.status === OrderStatus.SHIPPED || order.status === OrderStatus.DELIVERED)) {
       throw new BadRequestException('Pedido não pode ser cancelado após envio');
@@ -307,16 +311,17 @@ export class OrderService {
 
     await tx.order.update({
       where: { id: order.id },
-      data: { status: nextStatus },
+      data: { status: nextStatus, ...(nextStatus === OrderStatus.SHIPPED ? { trackingCode } : {}) },
     });
   }
 
-  private emitStatusChanged(email: string, name: string | null, orderId: string, status: OrderStatus) {
+  private emitStatusChanged(email: string, name: string | null, orderId: string, status: OrderStatus, trackingCode?: string) {
     this.emitter.emit('order.status.changed', {
       email,
       name,
       orderId,
       status,
+      trackingCode,
     });
   }
 

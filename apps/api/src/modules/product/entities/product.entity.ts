@@ -10,6 +10,7 @@ export interface ProductVariantEntity {
   stock: number;
   price_modifier_in_cents: number | null;
   is_available: boolean;
+  image_url: string | null;
 }
 
 export interface ProductCategoryEntity {
@@ -27,6 +28,8 @@ export interface ProductEntity {
   price_in_cents: number;
   is_active: boolean;
   is_featured: boolean;
+  is_exclusive: boolean;
+  is_ready_to_ship: boolean;
   stock: number;
   is_available: boolean;
   created_at: Date;

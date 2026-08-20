@@ -88,6 +88,15 @@ export class ProductRepository {
     });
   }
 
+  findRelated(productId: string, categoryId: string, limit = 4) {
+    return this.prisma.product.findMany({
+      where: { id: { not: productId }, deletedAt: null, isActive: true, category: { isActive: true }, OR: [{ categoryId }, { isFeatured: true }] },
+      include: PRODUCT_INCLUDE,
+      orderBy: [{ isFeatured: 'desc' }, { createdAt: 'desc' }],
+      take: limit,
+    });
+  }
+
   findBySlug(slug: string, excludedId?: string) {
     return this.prisma.product.findFirst({
       where: {
@@ -177,12 +186,18 @@ export class ProductRepository {
     if (filters.featured !== undefined) {
       where.isFeatured = filters.featured;
     }
+    if (filters.exclusive !== undefined) where.isExclusive = filters.exclusive;
+    if (filters.ready_to_ship !== undefined) where.isReadyToShip = filters.ready_to_ship;
+    if (filters.available) where.OR = [{ stock: { gt: 0 } }, { variants: { some: { stock: { gt: 0 } } } }];
+    if (filters.variant) where.variants = { some: { name: { contains: filters.variant, mode: 'insensitive' } } };
 
     if (filters.search) {
-      where.OR = [
+      const searchConditions: Prisma.ProductWhereInput[] = [
         { name: { contains: filters.search, mode: 'insensitive' } },
         { description: { contains: filters.search, mode: 'insensitive' } },
+        { variants: { some: { name: { contains: filters.search, mode: 'insensitive' } } } },
       ];
+      where.AND = [...(Array.isArray(where.AND) ? where.AND : []), { OR: searchConditions }];
     }
 
     return where;
@@ -224,6 +239,7 @@ export class ProductRepository {
     if (sort === 'name') {
       return { name: order };
     }
+    if (sort === 'best_selling') return { orderItems: { _count: order } };
     return { createdAt: order };
   }
 

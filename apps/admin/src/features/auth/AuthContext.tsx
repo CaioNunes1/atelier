@@ -2,12 +2,14 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { api, tokenStore } from '@/lib/axios'
 import type { AdminUser } from '@/types'
+import type { AxiosResponse } from 'axios'
 
-let refreshPromise: Promise<unknown> | null = null
+type RefreshResponse = { data: { access_token: string; user: AdminUser } }
+let refreshPromise: Promise<AxiosResponse<RefreshResponse>> | null = null
 
 async function refreshSession() {
   if (!refreshPromise) {
-    refreshPromise = api.post('/api/auth/refresh', {})
+    refreshPromise = api.post<RefreshResponse>('/api/auth/refresh', {})
       .finally(() => {
         refreshPromise = null
       })

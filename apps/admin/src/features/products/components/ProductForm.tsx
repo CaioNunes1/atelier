@@ -20,6 +20,8 @@ const schema = z.object({
   stock:       z.coerce.number().int().min(0, 'Estoque não pode ser negativo'),
   is_active:   z.boolean(),
   is_featured: z.boolean(),
+  is_exclusive: z.boolean(),
+  is_ready_to_ship: z.boolean(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -38,6 +40,7 @@ export function ProductForm({ product, onClose }: ProductFormProps) {
   const isPending = creating || updating
   const fileRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [variants, setVariants] = useState(product?.variants ?? [])
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -49,6 +52,8 @@ export function ProductForm({ product, onClose }: ProductFormProps) {
       stock:       product?.stock ?? 0,
       is_active:   product?.is_active ?? true,
       is_featured: product?.is_featured ?? false,
+      is_exclusive: product?.is_exclusive ?? false,
+      is_ready_to_ship: product?.is_ready_to_ship ?? true,
     },
   })
 
@@ -57,6 +62,8 @@ export function ProductForm({ product, onClose }: ProductFormProps) {
   // e o browser resetava o valor selecionado para vazio.
   const isActive   = watch('is_active')
   const isFeatured = watch('is_featured')
+  const isExclusive = watch('is_exclusive')
+  const isReadyToShip = watch('is_ready_to_ship')
 
     // ↓ COLOCA AQUI — depois de todos os hooks, antes do return do form
   if (isEditing && loadingCategories) {
@@ -78,6 +85,9 @@ export function ProductForm({ product, onClose }: ProductFormProps) {
       stock:          data.stock,
       is_active:      data.is_active,
       is_featured:    data.is_featured,
+      is_exclusive:   data.is_exclusive,
+      is_ready_to_ship: data.is_ready_to_ship,
+      variants: variants.filter(v => v.name.trim()).map(v => ({ ...v, id: v.id || undefined, price_modifier_in_cents: v.price_modifier_in_cents || undefined, image_url: v.image_url || undefined })),
     }
     if (isEditing) update({ id: product.id, ...payload })
     else create(payload)
@@ -182,6 +192,18 @@ export function ProductForm({ product, onClose }: ProductFormProps) {
       <div className="flex flex-col gap-3 py-1">
         <Toggle checked={isActive}   onChange={v => setValue('is_active', v)}   label="Produto ativo (visível na loja)" />
         <Toggle checked={isFeatured} onChange={v => setValue('is_featured', v)} label="Destaque na página inicial" />
+        <Toggle checked={isExclusive} onChange={v => setValue('is_exclusive', v)} label="Peça exclusiva" />
+        <Toggle checked={isReadyToShip} onChange={v => setValue('is_ready_to_ship', v)} label="Produto pronta-entrega" />
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between"><label className="input-label">Variações</label><button type="button" className="btn-ghost" onClick={() => setVariants(v => [...v, { id: '', name: '', stock: 0, price_modifier_in_cents: 0, image_url: '' }])}>Adicionar</button></div>
+        {variants.map((variant, index) => <div key={variant.id || index} className="grid grid-cols-2 gap-2 rounded-xl bg-admin-surface p-3">
+          <input className="input-field" placeholder="Cor, tamanho ou material" value={variant.name} onChange={e => setVariants(v => v.map((item,i) => i === index ? { ...item, name: e.target.value } : item))} />
+          <input className="input-field" type="number" min="0" placeholder="Estoque" value={variant.stock} onChange={e => setVariants(v => v.map((item,i) => i === index ? { ...item, stock: Number(e.target.value) } : item))} />
+          <input className="input-field" type="number" placeholder="Acréscimo em centavos" value={variant.price_modifier_in_cents} onChange={e => setVariants(v => v.map((item,i) => i === index ? { ...item, price_modifier_in_cents: Number(e.target.value) } : item))} />
+          <input className="input-field" placeholder="URL da imagem (opcional)" value={variant.image_url ?? ''} onChange={e => setVariants(v => v.map((item,i) => i === index ? { ...item, image_url: e.target.value } : item))} />
+        </div>)}
       </div>
 
       {/* Upload de imagens — só aparece em edição */}

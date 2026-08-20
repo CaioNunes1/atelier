@@ -18,6 +18,8 @@ import { OrdersPage } from './features/profile/pages/OrdersPage';
 import { OrderDetailPage } from './features/profile/pages/OrderDetailPage';
 import { AccountPage } from './features/profile/pages/AccountPage';
 import { PrivateRoute } from './routes/guards';
+import { ForgotPasswordPage } from './features/auth/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './features/auth/pages/ResetPasswordPage';
 
 function AppShell() {
   const [cartOpen, setCartOpen] = useState(false);
@@ -132,6 +134,8 @@ function AppShell() {
           <Route path="/profile/favorites" element={<FavoritesPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<RegisterPage />} />
+          <Route path="/esqueci-minha-senha" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
           <Route path="/checkout/sucesso"  element={<CheckoutSuccessPage />} />

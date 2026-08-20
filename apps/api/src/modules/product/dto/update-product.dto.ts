@@ -1,5 +1,6 @@
-import { Transform } from 'class-transformer';
-import { IsBoolean, IsInt, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsInt, IsOptional, IsString, IsUUID, MaxLength, Min, ValidateNested } from 'class-validator';
+import { ProductVariantInputDto } from './create-product.dto';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -29,6 +30,15 @@ export class UpdateProductDto {
   @IsOptional()
   @IsBoolean()
   is_featured?: boolean;
+
+  @IsOptional() @IsBoolean()
+  is_exclusive?: boolean;
+
+  @IsOptional() @IsBoolean()
+  is_ready_to_ship?: boolean;
+
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ProductVariantInputDto)
+  variants?: ProductVariantInputDto[];
 
   @IsOptional()
   @IsInt()

@@ -49,6 +49,11 @@ export class ProductController {
     return { data: product };
   }
 
+  @Get('products/:slug/related')
+  async findRelated(@Param('slug') slug: string) {
+    return { data: await this.productService.findRelated(slug) };
+  }
+
   @Get('admin/products')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

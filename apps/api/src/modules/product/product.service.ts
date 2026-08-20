@@ -81,10 +81,19 @@ export class ProductService {
       priceInCents: dto.price_in_cents,
       isActive: dto.is_active ?? true,
       isFeatured: dto.is_featured ?? false,
+      isExclusive: dto.is_exclusive ?? false,
+      isReadyToShip: dto.is_ready_to_ship ?? true,
       stock: dto.stock,
+      variants: dto.variants ? { create: dto.variants.map(v => ({ name: v.name, stock: v.stock, priceModifierInCents: v.price_modifier_in_cents ?? null, imageUrl: v.image_url ?? null })) } : undefined,
     });
 
     return this.toEntity(product);
+  }
+
+  async findRelated(slug: string): Promise<ProductEntity[]> {
+    const product = await this.productRepository.findPublicBySlug(slug);
+    if (!product) throw new NotFoundException('Produto não encontrado');
+    return (await this.productRepository.findRelated(product.id, product.categoryId)).map(item => this.toEntity(item));
   }
 
   async update(id: string, dto: UpdateProductDto): Promise<ProductEntity> {
@@ -110,6 +119,12 @@ export class ProductService {
       ...(dto.price_in_cents !== undefined ? { priceInCents: dto.price_in_cents } : {}),
       ...(dto.is_active !== undefined ? { isActive: dto.is_active } : {}),
       ...(dto.is_featured !== undefined ? { isFeatured: dto.is_featured } : {}),
+      ...(dto.is_exclusive !== undefined ? { isExclusive: dto.is_exclusive } : {}),
+      ...(dto.is_ready_to_ship !== undefined ? { isReadyToShip: dto.is_ready_to_ship } : {}),
+      ...(dto.variants !== undefined ? { variants: {
+        create: dto.variants.filter(v => !v.id).map(v => ({ name: v.name, stock: v.stock, priceModifierInCents: v.price_modifier_in_cents ?? null, imageUrl: v.image_url ?? null })),
+        update: dto.variants.filter(v => v.id).map(v => ({ where: { id: v.id }, data: { name: v.name, stock: v.stock, priceModifierInCents: v.price_modifier_in_cents ?? null, imageUrl: v.image_url ?? null } })),
+      } } : {}),
       ...(dto.stock !== undefined ? { stock: dto.stock } : {}),
     });
 
@@ -216,12 +231,14 @@ export class ProductService {
     priceInCents: number;
     isActive: boolean;
     isFeatured: boolean;
+    isExclusive: boolean;
+    isReadyToShip: boolean;
     stock: number;
     createdAt: Date;
     updatedAt: Date;
     category: { id: string; name: string; slug: string };
     images: Array<{ id: string; url: string; position: number }>;
-    variants: Array<{ id: string; name: string; stock: number; priceModifierInCents: number | null }>;
+    variants: Array<{ id: string; name: string; stock: number; priceModifierInCents: number | null; imageUrl: string | null }>;
   }): ProductEntity {
     return {
       id: product.id,
@@ -236,8 +253,10 @@ export class ProductService {
       price_in_cents: product.priceInCents,
       is_active: product.isActive,
       is_featured: product.isFeatured,
+      is_exclusive: product.isExclusive,
+      is_ready_to_ship: product.isReadyToShip,
       stock: product.stock,
-      is_available: product.stock > 0,
+      is_available: product.variants.length > 0 ? product.variants.some(v => v.stock > 0) : product.stock > 0,
       created_at: product.createdAt,
       updated_at: product.updatedAt,
       images: product.images.map((image) => ({
@@ -251,6 +270,7 @@ export class ProductService {
         stock: variant.stock,
         price_modifier_in_cents: variant.priceModifierInCents,
         is_available: variant.stock > 0,
+        image_url: variant.imageUrl,
       })),
     };
   }

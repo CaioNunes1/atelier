@@ -43,8 +43,8 @@ export class ProductFiltersDto {
   max_price?: number;
 
   @IsOptional()
-  @IsIn(['price', 'name', 'created_at'])
-  sort?: 'price' | 'name' | 'created_at';
+  @IsIn(['price', 'name', 'created_at', 'best_selling'])
+  sort?: 'price' | 'name' | 'created_at' | 'best_selling';
 
   @IsOptional()
   @IsIn(['asc', 'desc'])
@@ -54,6 +54,18 @@ export class ProductFiltersDto {
   @Transform(({ value }) => toBoolean(value))
   @IsBoolean()
   featured?: boolean;
+
+  @IsOptional() @Transform(({ value }) => toBoolean(value)) @IsBoolean()
+  available?: boolean;
+
+  @IsOptional() @Transform(({ value }) => toBoolean(value)) @IsBoolean()
+  exclusive?: boolean;
+
+  @IsOptional() @Transform(({ value }) => toBoolean(value)) @IsBoolean()
+  ready_to_ship?: boolean;
+
+  @IsOptional() @IsString() @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value)
+  variant?: string;
 
   @IsOptional()
   @IsString()

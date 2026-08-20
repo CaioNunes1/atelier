@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class PaymentService {
@@ -11,6 +12,7 @@ export class PaymentService {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
   ) {
     const token = this.configService.get<string>('MP_ACCESS_TOKEN')
     console.log('MP_ACCESS_TOKEN carregado:', token?.slice(0, 20) + '...')  // mostra só o iníci
@@ -166,7 +168,7 @@ async handleWebhook(data: {
       const order = await this.prisma.order.findUnique({
         where: {
           id: orderId,
-        },
+        }, include: { user: true },
       });
 
       if (!order) {
@@ -201,6 +203,7 @@ async handleWebhook(data: {
       console.log(
         `Pedido ${orderId} atualizado para PAID.`,
       );
+      await this.emailService.order(order.user.email, order.user.name, orderId, 'Pagamento aprovado. Seu pedido será preparado.');
 
       return;
     }
@@ -212,14 +215,15 @@ async handleWebhook(data: {
       payment.status === 'rejected' ||
       payment.status === 'cancelled'
     ) {
-      await this.prisma.order.update({
+      const cancelledOrder = await this.prisma.order.update({
         where: {
           id: orderId,
         },
         data: {
           status: 'CANCELLED',
-        },
+        }, include: { user: true },
       });
+      await this.emailService.order(cancelledOrder.user.email, cancelledOrder.user.name, orderId, 'O pagamento foi recusado ou cancelado.');
 
       console.log(
         `Pedido ${orderId} atualizado para CANCELLED.`,

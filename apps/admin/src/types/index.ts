@@ -40,6 +40,7 @@ export interface ProductVariant {
   name: string
   stock: number
   price_modifier_in_cents: number
+  image_url?: string | null
 }
 
 export interface Product {
@@ -52,11 +53,14 @@ export interface Product {
   price_in_cents: number
   is_active: boolean
   is_featured: boolean
+  is_exclusive: boolean
+  is_ready_to_ship: boolean
   stock: number
   deleted_at: string | null
   created_at: string
   updated_at: string
   images: ProductImage[]
+  variants: ProductVariant[]
 }
 
 export interface CreateProductPayload {
@@ -66,6 +70,9 @@ export interface CreateProductPayload {
   price_in_cents: number
   is_active?: boolean
   is_featured?: boolean
+  is_exclusive?: boolean
+  is_ready_to_ship?: boolean
+  variants?: Array<{ id?: string; name: string; stock: number; price_modifier_in_cents?: number; image_url?: string }>
   stock: number
 }
 

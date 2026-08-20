@@ -19,6 +19,7 @@ const SORT_OPTIONS: SortOption[] = [
   { label: 'Mais recentes', sort: 'created_at', order: 'desc' },
   { label: 'Menor preço', sort: 'price', order: 'asc' },
   { label: 'Maior preço', sort: 'price', order: 'desc' },
+  { label: 'Mais vendidos', sort: 'best_selling', order: 'desc' },
 ];
 
 function toDisplayPrice(cents?: number) {
@@ -60,6 +61,15 @@ export function ProductFilters({ categories, filters, onChange, onReset, classNa
       </div>
 
       <div className="mt-6 space-y-6">
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-stone-700">Cor ou material</span>
+          <input value={filters.variant ?? ''} onChange={(event) => onChange({ variant: event.target.value || undefined })} placeholder="Ex: azul, couro" className="w-full rounded-2xl border border-roseartisan-200 bg-white px-4 py-3 text-sm outline-none" />
+        </label>
+        <div className="space-y-3">
+          {([['available', 'Somente disponíveis'], ['exclusive', 'Peças exclusivas'], ['ready_to_ship', 'Pronta-entrega']] as const).map(([key, label]) => (
+            <label key={key} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={filters[key] ?? false} onChange={(event) => onChange({ [key]: event.target.checked || undefined })} />{label}</label>
+          ))}
+        </div>
         <label className="block space-y-2">
           <span className="text-sm font-medium text-stone-700">Categoria</span>
           <select

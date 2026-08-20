@@ -17,6 +17,7 @@ export interface ProductVariant {
   stock: number;
   price_modifier_in_cents: number | null;
   is_available: boolean;
+  image_url: string | null;
 }
 
 export interface ProductCategory {
@@ -34,6 +35,8 @@ export interface Product {
   price_in_cents: number;
   is_active: boolean;
   is_featured: boolean;
+  is_exclusive: boolean;
+  is_ready_to_ship: boolean;
   stock: number;
   is_available: boolean;
   created_at: string;
@@ -42,7 +45,7 @@ export interface Product {
   variants: ProductVariant[];
 }
 
-export type ProductSort = 'price' | 'name' | 'created_at';
+export type ProductSort = 'price' | 'name' | 'created_at' | 'best_selling';
 export type ProductOrder = 'asc' | 'desc';
 
 export interface ProductsFilters {
@@ -53,6 +56,10 @@ export interface ProductsFilters {
   order?: ProductOrder;
   featured?: boolean;
   search?: string;
+  available?: boolean;
+  exclusive?: boolean;
+  ready_to_ship?: boolean;
+  variant?: string;
   page?: number;
   per_page?: number;
 }

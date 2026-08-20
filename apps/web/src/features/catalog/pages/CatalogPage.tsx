@@ -51,7 +51,7 @@ export function CatalogPage() {
   const filters = useMemo<ProductsFilters>(() => {
     const sort = searchParams.get('sort');
     const order = searchParams.get('order');
-    const selectedSort: ProductSort = sort === 'price' || sort === 'name' || sort === 'created_at' ? sort : 'created_at';
+    const selectedSort: ProductSort = sort === 'price' || sort === 'name' || sort === 'created_at' || sort === 'best_selling' ? sort : 'created_at';
     const selectedOrder: ProductOrder = order === 'asc' || order === 'desc' ? order : 'desc';
 
     return {
@@ -61,6 +61,10 @@ export function CatalogPage() {
       sort: selectedSort,
       order: selectedOrder,
       search: searchParams.get('search') ?? undefined,
+      variant: searchParams.get('variant') ?? undefined,
+      available: searchParams.get('available') === 'true' || undefined,
+      exclusive: searchParams.get('exclusive') === 'true' || undefined,
+      ready_to_ship: searchParams.get('ready_to_ship') === 'true' || undefined,
       page: toNumber(searchParams.get('page')) ?? 1,
       per_page: 12,
     };

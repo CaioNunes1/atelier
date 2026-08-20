@@ -12,3 +12,11 @@ export function useProduct(slug: string) {
     },
   });
 }
+
+export function useRelatedProducts(slug: string) {
+  return useQuery({
+    queryKey: ['product', slug, 'related'],
+    enabled: Boolean(slug),
+    queryFn: async () => (await api.get<{ data: Product[] }>(`/api/products/${slug}/related`)).data.data,
+  });
+}

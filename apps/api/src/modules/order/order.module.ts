@@ -9,9 +9,10 @@ import { AdminOrderController, OrderController, OrderPublicController } from './
 import { OrderNotificationService } from './order-notification.service';
 import { OrderRepository } from './order.repository';
 import { OrderService } from './order.service';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [AddressModule, CartModule, CouponModule, ShippingModule],
+  imports: [AddressModule, CartModule, CouponModule, ShippingModule, EmailModule],
   controllers: [OrderController, AdminOrderController,OrderPublicController],
   providers: [
     OrderService,
